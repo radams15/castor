@@ -1,18 +1,27 @@
-use std::fs::File;
-use std::io::prelude::*;
-use std::io::{BufRead, BufReader};
+#![allow(unused_variables, unused_mut)]
 
-use gtk::Orientation::{Horizontal, Vertical};
-use gtk::{ButtonExt, EntryExt, Inhibit, OrientableExt, TextBufferExt, TextViewExt, WidgetExt};
-use relm::Widget;
-use relm_derive::{widget, Msg};
-use webkit2gtk::{WebContext, WebContextExt, WebViewExt};
+extern crate gio;
+extern crate glib;
+extern crate gtk;
+#[macro_use]
+extern crate lazy_static;
+
+use gio::prelude::*;
+use glib::clone;
+use gtk::prelude::*;
+use gtk::{ApplicationWindow, Builder, Button, Entry, TextBuffer, TextBufferExt, TextView};
+
+use std::env::args;
 
 extern crate regex;
 use regex::Regex;
 
-use url::Url;
 mod content;
+mod absolute;
+mod history;
+mod tags;
+mod link;
+use link::Link;
 
 const LINK_REGEX: &str = r"^=>\s*(\S*)\s*(.*)?$";
 const H1_REGEX: &str = r"^#\s+(.*)$";
@@ -20,234 +29,141 @@ const H2_REGEX: &str = r"^##\s+(.*)$";
 const H3_REGEX: &str = r"^###\s+(.*)$";
 const UL_REGEX: &str = r"^\s*\*\s+(.*)$";
 
-use self::Msg::*;
+fn build_ui(application: &gtk::Application) {
+    let glade_src = include_str!("castor.glade");
+    let builder = Builder::new_from_string(glade_src);
 
-pub struct Model {
-    current_url: String,
-    current_host: String,
-}
+    let window: ApplicationWindow = builder.get_object("window").expect("Couldn't get window");
+    window.set_application(Some(application));
+    let url_bar: Entry = builder.get_object("url_bar").expect("Couldn't get url_bar");
+    let content_view: TextView = builder.get_object("content_view").expect("Couldn't get content_view");
+    let back_button: Button = builder.get_object("back_button").expect("Couldn't get back_button");
 
-#[derive(Msg)]
-pub enum Msg {
-    Back,
-    Go(String),
-    Quit,
-    Next,
-    Search,
-}
+    tags::apply_tags(&content_view.get_buffer().unwrap());
 
-#[widget]
-impl Widget for Win {
-    fn init_view(&mut self) {
-        // self.webview.load_uri("gemini://gemini.circumlunar.space");
-    }
+    url_bar.connect_activate(clone!(@weak content_view => move |bar| {
+        let url = bar.get_text().expect("get_text failed").to_string();
+        let full_url = if url.starts_with("gemini://") {
+            url
+        } else {
+            format!("gemini://{}", url)
+        };
 
-    fn model() -> Model {
-        Model {
-            current_url: String::from(""),
-            current_host: String::from(""),
-        }
-    }
+        let new_content = visit_url(full_url, &content_view);
+    }));
 
-    fn update(&mut self, event: Msg) {
-        match event {
-            Back => (),
-            Go(url) => {
-                let new_url = Url::parse(&url).unwrap();
-                let data = content::get_data(&new_url);
-                self.model.current_url = new_url.to_string();
-                self.model.current_host = new_url.host().unwrap().to_string();
-                match data {
-                    Ok((meta, new_content)) => {
-                        clear_buffer(&self.webview);
-                        let content_str = String::from_utf8_lossy(&new_content).to_string();
-                        // let content = gemini2html(content_str, self.model.current_url.clone());
-                        // self.webview.load_html(&content, None);
-                        let content = parse_gemini(
-                            &content_str,
-                            self.model.current_url.clone(),
-                            self.model.current_host.clone(),
-                            self.webview.get_buffer().unwrap(),
-                        );
+    back_button.connect_clicked(clone!(@weak content_view => move |_| {
+        go_back(&content_view);
+    }));
 
-                        let (start, end) = content.get_bounds();
-                        // content.delete(&mut start, &mut end);
-                        // let (start, end) = content.get_bounds();
-                        content.set_text(&content.get_text(&start, &end, false).unwrap());
-                    }
-                    Err(_) => {
-                        let content = "ERROR";
-                        self.webview.get_buffer().unwrap().set_text(&content);
-                    }
-                }
-            }
-            Quit => gtk::main_quit(),
-            Next => (),
-            Search => (),
-        }
-    }
-
-    view! {
-        gtk::Window {
-            gtk::Box {
-                orientation: Vertical,
-                gtk::ButtonBox {
-                    orientation: Horizontal,
-                    #[name="search_box"]
-
-                    #[name="back_button"]
-                    gtk::Button {
-                        label: "<",
-                        clicked => Back,
-                    },
-
-                    #[name="next_button"]
-                    gtk::Button {
-                        label: ">",
-                        clicked => Next,
-                    },
-
-                    #[name="url_bar"]
-                    gtk::Entry {
-                        activate(url_bar) => {
-                            let url = url_bar.get_text().expect("get_text failed").to_string();
-                            if url.starts_with("gemini://") {
-                                Go(url)
-                            } else {
-                                Go(format!("gemini://{}", url))
-                            }
-                        },
-                        placeholder_text: Some("Enter a URL"),
-                        width_chars: 40,
-                    },
-                },
-                gtk::ScrolledWindow {
-                    #[name="webview"]
-                    gtk::TextView {
-                        vexpand: true,
-                        editable: false,
-                    },
-                }
-                // webkit2gtk::WebView {
-                //     vexpand: true,
-                //     // decide_policy(_, policy_decision, policy_decision_type) with (open_in_new_window, relm) =>
-                //     //     return WebView::decide_policy(&policy_decision, &policy_decision_type, &open_in_new_window, &relm),
-                //     // permission_request(_, request) => (PermissionRequest(request.clone()), true),
-                // },
-            },
-            delete_event(_, _) => (Quit, Inhibit(false)),
-        }
-    }
+    window.show_all();
 }
 
 fn main() {
-    // let context = WebContext::get_default().unwrap();
-    // context.register_uri_scheme("gemini", visit_link);
-    Win::run(()).expect("Win::run failed");
+    let application =
+        gtk::Application::new(Some("org.typed-hole.castor"), Default::default())
+            .expect("Initialization failed...");
+
+    application.connect_activate(|app| {
+        build_ui(app);
+    });
+
+    application.run(&args().collect::<Vec<_>>());
 }
 
-fn visit_link(url: &str) -> String {
-    let new_url = Url::parse(url).unwrap();
-    let data = content::get_data(&new_url);
-    match data {
-        Ok((meta, new_content)) => String::from_utf8_lossy(&new_content).to_string(),
-        Err(_) => String::from("ERROR"),
+fn go_back(view: &TextView) {
+    let previous = history::get_previous_url();
+    if let Some(url) = previous {
+        visit_url(url.to_string(), view)
     }
 }
 
-fn clear_buffer(view: &gtk::TextView) {
-    match view.get_buffer() {
-        Some(buffer) => {
-            let (mut start, mut end) = buffer.get_bounds();
-            buffer.delete(&mut start, &mut end);
+fn visit_url(url: String, view: &TextView) {
+    {
+        println!("{:?}", url);
+        match absolute::make(url.as_str()) {
+            Ok(url) => match content::get_data(&url) {
+                Ok((_meta, new_content)) => {
+                    history::append(url.as_str());
+                    let content_str = String::from_utf8_lossy(&new_content).to_string();
+                    clear_buffer(&view);
+                    parse_gemini(content_str, &view);
+                    view.show_all();
+                }
+                Err(_) => {
+                    let buffer = view.get_buffer().unwrap();
+                    let mut end_iter = buffer.get_end_iter();
+
+                    clear_buffer(&view);
+
+                    buffer.insert_markup(
+                        &mut end_iter,
+                        "<span foreground=\"red\" size=\"x-large\">ERROR</span>\n",
+                    );
+                }
+            }
+            Err(_) => {
+                println!("Could not parse {}", url.as_str());
+            }
         }
-        None => (),
     }
 }
 
-// fn gemini2html(content: String, current_url: String) -> String {
-//     let link_regexp = Regex::new(LINK_REGEX).unwrap();
-//     let h1_regexp = Regex::new(H1_REGEX).unwrap();
-//     let h2_regexp = Regex::new(H2_REGEX).unwrap();
-//     let h3_regexp = Regex::new(H3_REGEX).unwrap();
-//     let ul_regexp = Regex::new(UL_REGEX).unwrap();
-
-//     let mut html = String::from("<!DOCTYPE html><html><body>");
-
-//     for line in content.lines() {
-//         if link_regexp.is_match(line) {
-//             let caps = link_regexp.captures(&line).unwrap();
-//             let dest = caps.get(1).map_or("", |m| m.as_str());
-//             let label = caps.get(2).map_or("", |m| m.as_str());
-//             html.push_str(&format!(
-//                 "<a href={}>{}</a><br/>",
-//                 make_absolute(dest, &current_url),
-//                 label
-//             ));
-//         } else if h1_regexp.is_match(line) {
-//             let caps = h1_regexp.captures(&line).unwrap();
-//             let header = caps.get(1).map_or("", |m| m.as_str());
-//             html.push_str(&format!("<h1>{}</h1>", header));
-//         } else if h2_regexp.is_match(line) {
-//             let caps = h2_regexp.captures(&line).unwrap();
-//             let header = caps.get(1).map_or("", |m| m.as_str());
-//             html.push_str(&format!("<h2>{}</h2>", header));
-//         } else if h3_regexp.is_match(line) {
-//             let caps = h3_regexp.captures(&line).unwrap();
-//             let header = caps.get(1).map_or("", |m| m.as_str());
-//             html.push_str(&format!("<h3>{}</h3>", header));
-//         } else if ul_regexp.is_match(line) {
-//             let caps = ul_regexp.captures(&line).unwrap();
-//             let header = caps.get(1).map_or("", |m| m.as_str());
-//             html.push_str(&format!("<ul><li>{}</li></ul>", header));
-//         } else if line.is_empty() {
-//             html.push_str("<br/>");
-//         } else {
-//             html.push_str(&format!("{}<br/>", line));
-//         }
-//     }
-
-//     let html_end = "</body></html>";
-//     println!("{}{}", html, html_end);
-//     format!("{}{}", html, html_end)
-// }
-
-fn parse_gemini(
-    content: &String,
-    current_url: String,
-    current_host: String,
-    buffer: gtk::TextBuffer,
-) -> gtk::TextBuffer {
+fn parse_gemini(content: String, view: &TextView) -> TextBuffer {
     let link_regexp = Regex::new(LINK_REGEX).unwrap();
     let h1_regexp = Regex::new(H1_REGEX).unwrap();
     let h2_regexp = Regex::new(H2_REGEX).unwrap();
     let h3_regexp = Regex::new(H3_REGEX).unwrap();
     let ul_regexp = Regex::new(UL_REGEX).unwrap();
+    let buffer = view.get_buffer().unwrap();
+    let mut i = 0;
 
     for line in content.lines() {
         if link_regexp.is_match(line) {
             let caps = link_regexp.captures(&line).unwrap();
-            let dest = caps.get(1).map_or("", |m| m.as_str());
-            let label = caps.get(2).map_or("", |m| m.as_str());
+            let dest = String::from(caps.get(1).map_or("", |m| m.as_str()));
+            let label = String::from(caps.get(2).map_or("", |m| m.as_str()));
+
+            let button_label = if label.is_empty() {
+                dest.clone()
+            } else {
+                label
+            };
+
+            let button = gtk::Button::new_with_label(&button_label);
+
+            button.connect_clicked(clone!(@weak view => move |button| {
+                let new_url = absolute::make(&dest.clone()).unwrap().to_string();
+                visit_url(new_url, &view);
+            }));
+
+            let mut start_iter = buffer.get_iter_at_line(i);
+            let anchor = buffer.create_child_anchor(&mut start_iter).unwrap();
+            view.add_child_at_anchor(&button, &anchor);
             let mut end_iter = buffer.get_end_iter();
-            buffer.insert(
-                &mut end_iter,
-                &format!(
-                    "Link: {} -> {}\n",
-                    label,
-                    make_absolute(dest, &current_url, &current_host)
-                ),
-            );
+            buffer.insert(&mut end_iter, "\n");
         } else if h1_regexp.is_match(line) {
             let caps = h1_regexp.captures(&line).unwrap();
             let header = caps.get(1).map_or("", |m| m.as_str());
             let mut end_iter = buffer.get_end_iter();
-            buffer.insert(&mut end_iter, &format!("Header 1: {}\n", header));
+            buffer.insert_markup(
+                &mut end_iter,
+                &format!(
+                    "<span foreground=\"#9932CC\" size=\"x-large\">{}</span>\n",
+                    header
+                ),
+            );
         } else if h2_regexp.is_match(line) {
             let caps = h2_regexp.captures(&line).unwrap();
             let header = caps.get(1).map_or("", |m| m.as_str());
             let mut end_iter = buffer.get_end_iter();
-            buffer.insert(&mut end_iter, &format!("Header 2: {}\n", header));
+            buffer.insert_markup(
+                &mut end_iter,
+                &format!(
+                    "<span foreground=\"#FF1493\" size=\"large\">{}</span>\n",
+                    header
+                ),
+            );
         } else if h3_regexp.is_match(line) {
             let caps = h3_regexp.captures(&line).unwrap();
             let header = caps.get(1).map_or("", |m| m.as_str());
@@ -257,7 +173,10 @@ fn parse_gemini(
             let caps = ul_regexp.captures(&line).unwrap();
             let header = caps.get(1).map_or("", |m| m.as_str());
             let mut end_iter = buffer.get_end_iter();
-            buffer.insert(&mut end_iter, &format!("List item: {}\n", header));
+            buffer.insert_markup(
+                &mut end_iter,
+                &format!("<span foreground=\"green\">■ {}</span>\n", header),
+            );
         } else if line.is_empty() {
             let mut end_iter = buffer.get_end_iter();
             buffer.insert(&mut end_iter, "\n");
@@ -265,34 +184,17 @@ fn parse_gemini(
             let mut end_iter = buffer.get_end_iter();
             buffer.insert(&mut end_iter, &format!("{}\n", line));
         }
+        i += 1;
     }
     buffer
 }
 
-fn make_absolute(url: &str, current_host: &str, current_url: &str) -> String {
-    if url.starts_with("gopher://") {
-        String::from(url)
-    } else if url.starts_with("http://") {
-        String::from(url)
-    } else if url.starts_with("https://") {
-        String::from(url)
-    } else if !current_host.is_empty() {
-        if url.starts_with("gemini://") {
-            String::from(url)
-        } else if url.starts_with("//") {
-            format!("gemini:{}", url)
-        } else if url.starts_with('/') {
-            format!("{}{}", current_host, url)
-        } else {
-            format!("{}{}", current_url, url)
+fn clear_buffer(view: &gtk::TextView) {
+    match view.get_buffer() {
+        Some(buffer) => {
+            let (mut start, mut end) = buffer.get_bounds();
+            buffer.delete(&mut start, &mut end);
         }
-    } else {
-        if url.starts_with("gemini://") {
-            String::from(url)
-        } else if url.starts_with("//") {
-            format!("gemini:{}", url)
-        } else {
-            format!("gemini://{}", url)
-        }
+        None => (),
     }
 }
