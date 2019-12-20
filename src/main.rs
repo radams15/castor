@@ -168,7 +168,13 @@ fn parse_gemini(content: String, view: &TextView) -> TextBuffer {
             let caps = h3_regexp.captures(&line).unwrap();
             let header = caps.get(1).map_or("", |m| m.as_str());
             let mut end_iter = buffer.get_end_iter();
-            buffer.insert(&mut end_iter, &format!("Header 3: {}\n", header));
+            buffer.insert_markup(
+                &mut end_iter,
+                &format!(
+                    "<span foreground=\"#87CEFA\" size=\"medium\">{}</span>\n",
+                    header
+                ),
+            );
         } else if ul_regexp.is_match(line) {
             let caps = ul_regexp.captures(&line).unwrap();
             let header = caps.get(1).map_or("", |m| m.as_str());
