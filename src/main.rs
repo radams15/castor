@@ -59,7 +59,7 @@ fn main() {
                 format!("gemini://{}", url)
             };
 
-            let new_content = visit_url(full_url, &gui2);
+            let new_content = visit_url(&gui2, full_url);
         }));
     }
 
@@ -73,16 +73,16 @@ fn main() {
 fn go_back(gui: &Arc<Gui>) {
     let previous = history::get_previous_url();
     if let Some(url) = previous {
-        visit_url(url.to_string(), gui)
+        visit_url(gui, url.to_string())
     }
 }
 
-fn update_url_field(url: &str, gui: &Arc<Gui>) -> () {
+fn update_url_field(gui: &Arc<Gui>, url: &str) -> () {
     let url_bar = gui.url_bar();
     url_bar.get_buffer().set_text(url);
 }
 
-fn visit_url(url: String, gui: &Arc<Gui>) {
+fn visit_url(gui: &Arc<Gui>, url: String) {
     {
         let content_view = gui.content_view();
 
@@ -90,12 +90,12 @@ fn visit_url(url: String, gui: &Arc<Gui>) {
             Ok(url) => match content::get_data(&url) {
                 Ok((_meta, new_content)) => {
                     history::append(url.as_str());
-                    update_url_field(url.as_str(), &gui);
+                    update_url_field(&gui, url.as_str());
                     let content_str = String::from_utf8_lossy(&new_content).to_string();
 
                     clear_buffer(&content_view);
 
-                    parse_gemini(content_str, &gui);
+                    parse_gemini(&gui, content_str);
                     content_view.show_all();
                 }
                 Err(_) => {
@@ -117,7 +117,7 @@ fn visit_url(url: String, gui: &Arc<Gui>) {
     }
 }
 
-fn parse_gemini(content: String, gui: &Arc<Gui>) -> TextBuffer {
+fn parse_gemini(gui: &Arc<Gui>, content: String) -> TextBuffer {
     let link_regexp = Regex::new(LINK_REGEX).unwrap();
     let h1_regexp = Regex::new(H1_REGEX).unwrap();
     let h2_regexp = Regex::new(H2_REGEX).unwrap();
@@ -143,7 +143,7 @@ fn parse_gemini(content: String, gui: &Arc<Gui>) -> TextBuffer {
 
             button.connect_clicked(clone!(@weak gui => move |button| {
                 let new_url = absolute::make(&dest.clone()).unwrap().to_string();
-                visit_url(new_url, &gui);
+                visit_url(&gui, new_url);
             }));
 
             let mut start_iter = buffer.get_iter_at_line(i);
