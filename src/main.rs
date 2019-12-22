@@ -6,22 +6,22 @@ extern crate gtk;
 #[macro_use]
 extern crate lazy_static;
 
-use gio::prelude::*;
+use std::sync::Arc;
+
 use glib::clone;
 use gtk::prelude::*;
-use gtk::{ApplicationWindow, Builder, Button, Entry, TextBuffer, TextBufferExt, TextView};
-
-use std::env::args;
+use gtk::{TextBuffer, TextBufferExt};
 
 extern crate regex;
 use regex::Regex;
 
-mod content;
+mod gui;
+use gui::Gui;
 mod absolute;
+mod content;
 mod history;
-mod tags;
 mod link;
-use link::Link;
+mod tags;
 
 const LINK_REGEX: &str = r"^=>\s*(\S*)\s*(.*)?$";
 const H1_REGEX: &str = r"^#\s+(.*)$";
@@ -29,79 +29,87 @@ const H2_REGEX: &str = r"^##\s+(.*)$";
 const H3_REGEX: &str = r"^###\s+(.*)$";
 const UL_REGEX: &str = r"^\s*\*\s+(.*)$";
 
-fn build_ui(application: &gtk::Application) {
-    let glade_src = include_str!("castor.glade");
-    let builder = Builder::new_from_string(glade_src);
-
-    let window: ApplicationWindow = builder.get_object("window").expect("Couldn't get window");
-    window.set_application(Some(application));
-    let url_bar: Entry = builder.get_object("url_bar").expect("Couldn't get url_bar");
-    let content_view: TextView = builder.get_object("content_view").expect("Couldn't get content_view");
-    let back_button: Button = builder.get_object("back_button").expect("Couldn't get back_button");
-
-    tags::apply_tags(&content_view.get_buffer().unwrap());
-
-    url_bar.connect_activate(clone!(@weak content_view => move |bar| {
-        let url = bar.get_text().expect("get_text failed").to_string();
-        let full_url = if url.starts_with("gemini://") {
-            url
-        } else {
-            format!("gemini://{}", url)
-        };
-
-        let new_content = visit_url(full_url, &content_view);
-    }));
-
-    back_button.connect_clicked(clone!(@weak content_view => move |_| {
-        go_back(&content_view);
-    }));
-
-    window.show_all();
-}
 
 fn main() {
-    let application =
-        gtk::Application::new(Some("org.typed-hole.castor"), Default::default())
-            .expect("Initialization failed...");
+    // Start up the GTK3 subsystem.
+    gtk::init().expect("Unable to start GTK3. Error");
 
-    application.connect_activate(|app| {
-        build_ui(app);
-    });
+    // Create the main window.
+    let gui = Arc::new(Gui::new());
+    let content_view = gui.content_view();
 
-    application.run(&args().collect::<Vec<_>>());
+    // Bind back button
+    {
+        let button = gui.back_button();
+        let gui = gui.clone();
+        button.connect_clicked(clone!(@weak content_view => move |_| {
+            go_back(&gui);
+        }));
+    }
+
+    // Bind URL bar
+    {
+        let gui2 = gui.clone();
+        let url_bar = gui.url_bar();
+        url_bar.connect_activate(clone!(@weak content_view => move |bar| {
+            let url = bar.get_text().expect("get_text failed").to_string();
+            let full_url = if url.starts_with("gemini://") {
+                url
+            } else {
+                format!("gemini://{}", url)
+            };
+
+            let new_content = visit_url(full_url, &gui2);
+        }));
+    }
+
+    // Create Pango tags
+    tags::apply_tags(&content_view.get_buffer().unwrap());
+
+    gui.start();
+    gtk::main();
 }
 
-fn go_back(view: &TextView) {
+fn go_back(gui: &Arc<Gui>) {
     let previous = history::get_previous_url();
     if let Some(url) = previous {
-        visit_url(url.to_string(), view)
+        visit_url(url.to_string(), gui)
     }
 }
 
-fn visit_url(url: String, view: &TextView) {
+fn update_url_field(url: &str, gui: &Arc<Gui>) -> () {
+    let url_bar = gui.url_bar();
+    url_bar.get_buffer().set_text(url);
+}
+
+fn visit_url(url: String, gui: &Arc<Gui>) {
     {
-        println!("{:?}", url);
+        let content_view = gui.content_view();
+
         match absolute::make(url.as_str()) {
             Ok(url) => match content::get_data(&url) {
                 Ok((_meta, new_content)) => {
                     history::append(url.as_str());
+                    update_url_field(url.as_str(), &gui);
                     let content_str = String::from_utf8_lossy(&new_content).to_string();
-                    clear_buffer(&view);
-                    parse_gemini(content_str, &view);
-                    view.show_all();
+
+                    clear_buffer(&content_view);
+
+                    parse_gemini(content_str, &gui);
+                    content_view.show_all();
                 }
                 Err(_) => {
-                    let buffer = view.get_buffer().unwrap();
+                    let buffer = content_view.get_buffer().unwrap();
                     let mut end_iter = buffer.get_end_iter();
 
-                    clear_buffer(&view);
+                    clear_buffer(&content_view);
 
                     buffer.insert_markup(
                         &mut end_iter,
                         "<span foreground=\"red\" size=\"x-large\">ERROR</span>\n",
                     );
                 }
-            }
+            },
             Err(_) => {
                 println!("Could not parse {}", url.as_str());
             }
@@ -109,13 +117,14 @@ fn visit_url(url: String, view: &TextView) {
     }
 }
 
-fn parse_gemini(content: String, view: &TextView) -> TextBuffer {
+fn parse_gemini(content: String, gui: &Arc<Gui>) -> TextBuffer {
     let link_regexp = Regex::new(LINK_REGEX).unwrap();
     let h1_regexp = Regex::new(H1_REGEX).unwrap();
     let h2_regexp = Regex::new(H2_REGEX).unwrap();
     let h3_regexp = Regex::new(H3_REGEX).unwrap();
     let ul_regexp = Regex::new(UL_REGEX).unwrap();
-    let buffer = view.get_buffer().unwrap();
+    let content_view = gui.content_view();
+    let buffer = content_view.get_buffer().unwrap();
     let mut i = 0;
 
     for line in content.lines() {
@@ -132,14 +141,14 @@ fn parse_gemini(content: String, view: &TextView) -> TextBuffer {
 
             let button = gtk::Button::new_with_label(&button_label);
 
-            button.connect_clicked(clone!(@weak view => move |button| {
+            button.connect_clicked(clone!(@weak gui => move |button| {
                 let new_url = absolute::make(&dest.clone()).unwrap().to_string();
-                visit_url(new_url, &view);
+                visit_url(new_url, &gui);
             }));
 
             let mut start_iter = buffer.get_iter_at_line(i);
             let anchor = buffer.create_child_anchor(&mut start_iter).unwrap();
-            view.add_child_at_anchor(&button, &anchor);
+            content_view.add_child_at_anchor(&button, &anchor);
             let mut end_iter = buffer.get_end_iter();
             buffer.insert(&mut end_iter, "\n");
         } else if h1_regexp.is_match(line) {
