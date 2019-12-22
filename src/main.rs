@@ -140,6 +140,7 @@ fn parse_gemini(gui: &Arc<Gui>, content: String) -> TextBuffer {
             };
 
             let button = gtk::Button::new_with_label(&button_label);
+            button.set_tooltip_text(Some(&dest));
 
             button.connect_clicked(clone!(@weak gui => move |button| {
                 let new_url = absolute::make(&dest.clone()).unwrap().to_string();
