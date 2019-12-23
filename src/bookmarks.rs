@@ -1,0 +1,34 @@
+extern crate dirs;
+use std::fs::File;
+use std::fs::OpenOptions;
+use std::io::{Read, Write};
+
+
+pub fn add(url: &str) {
+    let mut file = bookmarks_file();
+    let entry = format!("=> {}\n", url);
+    file.write_all(entry.as_bytes())
+        .expect("Unable to write file");
+}
+
+pub fn content() -> String {
+    let mut file = bookmarks_file();
+    let mut content = String::new();
+    file.read_to_string(&mut content)
+        .expect("Unable to read file");
+
+    content
+}
+
+fn bookmarks_file() -> File {
+    let mut bookmarks = dirs::data_local_dir().unwrap();
+    bookmarks.push("castor_bookmarks");
+    let file_path = bookmarks.into_os_string();
+
+    OpenOptions::new()
+        .create(true)
+        .append(true)
+        .read(true)
+        .open(file_path)
+        .expect("file not found")
+}

@@ -16,6 +16,7 @@ use url::{Position, Url};
 mod gui;
 use gui::Gui;
 mod absolute;
+mod bookmarks;
 mod content;
 mod history;
 mod link;
@@ -40,6 +41,24 @@ fn main() {
         let gui = gui.clone();
         button.connect_clicked(move |_| {
             go_back(&gui);
+        });
+    }
+
+    // Bind add_bookmark button
+    {
+        let button = gui.add_bookmark_button();
+        let gui = gui.clone();
+        button.connect_clicked(move |_| {
+            add_bookmark(&gui);
+        });
+    }
+
+    // Bind show_bookmarks button
+    {
+        let button = gui.show_bookmarks_button();
+        let gui = gui.clone();
+        button.connect_clicked(move |_| {
+            show_bookmarks(&gui);
         });
     }
 
@@ -78,9 +97,36 @@ fn update_url_field(gui: &Arc<Gui>, url: &str) {
     url_bar.get_buffer().set_text(url);
 }
 
+fn add_bookmark(gui: &Arc<Gui>) {
+    let current_url = history::get_current_url();
+    if let Some(url) = current_url {
+        bookmarks::add(&url);
+        info_dialog(&gui, "Bookmark added.");
+    }
+}
+
+fn show_bookmarks(gui: &Arc<Gui>) {
+    let content_view = gui.content_view();
+
+    let bookmarks_list = format!("# Bookmarks\n\n{}", bookmarks::content());
+    let parsed_content = parser::parse(bookmarks_list);
+
+    clear_buffer(&content_view);
+    draw_content(&gui, parsed_content);
+
+    update_url_field(&gui, "::bookmarks");
+
+    content_view.show_all();
+}
+
 fn visit_url(gui: &Arc<Gui>, url: String) {
     {
         let content_view = gui.content_view();
+
+        if url == String::from("gemini://::bookmarks") {
+            show_bookmarks(&gui);
+            return
+        }
 
         match absolute::make(url.as_str()) {
             Ok(url) => match content::get_data(&url) {
@@ -270,6 +316,23 @@ fn insert_external_button(gui: &Arc<Gui>, url: Url, label: &str) {
     content_view.add_child_at_anchor(&button, &anchor);
     let mut end_iter = buffer.get_end_iter();
     buffer.insert(&mut end_iter, "\n");
+}
+
+fn info_dialog(gui: &Arc<Gui>, message: &str) {
+    let dialog = gtk::Dialog::new_with_buttons(
+        Some("Info"),
+        Some(gui.window()),
+        gtk::DialogFlags::MODAL,
+        &[("Close", ResponseType::Close)],
+    );
+    dialog.set_default_response(ResponseType::Close);
+    dialog.connect_response(|dialog, _| dialog.destroy());
+
+    let content_area = dialog.get_content_area();
+    let message = gtk::Label::new(Some(message));
+    content_area.add(&message);
+
+    dialog.show_all();
 }
 
 fn error_dialog(gui: &Arc<Gui>, message: &str) {

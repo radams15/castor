@@ -7,6 +7,8 @@ pub struct Gui {
     url_bar: Entry,
     content_view: TextView,
     back_button: Button,
+    add_bookmark_button: Button,
+    show_bookmarks_button: Button,
 }
 
 impl Gui {
@@ -20,37 +22,25 @@ impl Gui {
         let url_bar: Entry = builder.get_object("url_bar").expect("Couldn't get url_bar");
         let content_view: TextView = builder.get_object("content_view").expect("Couldn't get content_view");
         let back_button: Button = builder.get_object("back_button").expect("Couldn't get back_button");
+        let add_bookmark_button: Button = builder.get_object("add_bookmark_button").expect("Couldn't get add_bookmark_button");
+        let show_bookmarks_button: Button = builder.get_object("show_bookmarks_button").expect("Couldn't get show_bookmarks_button");
 
         Gui {
             window,
             url_bar,
             content_view,
             back_button,
+            add_bookmark_button,
+            show_bookmarks_button,
         }
     }
 
-    // Set up naming for the window and show it to the user.
     pub fn start(&self) {
-        glib::set_application_name("Castor");
-        self.window.set_wmclass("Castor", "Castor");
+        glib::set_application_name("Castor - Gemini Browser");
+        self.window.set_role("Castor - Gemini Browser");
         self.window.connect_delete_event(|_, _| { gtk::main_quit(); Inhibit(false) });
         self.window.show_all();
     }
-
-    // pub fn update_from(&self, state: &State) {
-    //     if let Some(ref err) = state.error {
-    //         self.error_label.set_text(
-    //             &format!("The dice expression entered is not valid:\n{}", err)
-    //         );
-    //         self.popover.show_all();
-    //     } else {
-    //         // The popover will hide itself anyway when the user clicks
-    //         // outside of it, but we shouldn't leave an error indicator in it.
-    //         self.error_label.set_text("");
-    //     }
-
-    //     self.result.set_text(&format!("{}", state.value));
-    // }
 
     pub fn window(&self) -> &ApplicationWindow {
         &self.window
@@ -66,5 +56,13 @@ impl Gui {
 
     pub fn back_button(&self) -> &Button {
         &self.back_button
+    }
+
+    pub fn add_bookmark_button(&self) -> &Button {
+        &self.add_bookmark_button
+    }
+
+    pub fn show_bookmarks_button(&self) -> &Button {
+        &self.show_bookmarks_button
     }
 }
