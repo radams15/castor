@@ -47,10 +47,10 @@ pub fn get_data(url: &url::Url) -> Result<(Vec<u8>, Vec<u8>), String> {
     }
 }
 
-// pub fn download(content: Vec<u8>) {
-//     let path = write_tmp_file(content);
-//     open::that(path).unwrap();
-// }
+pub fn download(content: Vec<u8>) {
+    let path = write_tmp_file(content);
+    open::that(path).unwrap();
+}
 
 fn write_tmp_file(content: Vec<u8>) -> std::path::PathBuf {
     let mut tmp_file = NamedTempFile::new().unwrap();
