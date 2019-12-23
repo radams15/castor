@@ -52,10 +52,6 @@ impl Gui {
     //     self.result.set_text(&format!("{}", state.value));
     // }
 
-    pub fn window(&self) -> &ApplicationWindow {
-        &self.window
-    }
-
     pub fn url_bar(&self) -> &Entry {
         &self.url_bar
     }

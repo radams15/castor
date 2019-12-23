@@ -1,19 +1,15 @@
-#![allow(unused_variables, unused_mut)]
-
 extern crate gio;
 extern crate glib;
 extern crate gtk;
 #[macro_use]
 extern crate lazy_static;
 
+use std::str::FromStr;
 use std::sync::Arc;
 
 use glib::clone;
 use gtk::prelude::*;
-use gtk::{TextBuffer, TextBufferExt};
-
-extern crate regex;
-use regex::Regex;
+use gtk::TextBuffer;
 
 mod gui;
 use gui::Gui;
@@ -21,14 +17,10 @@ mod absolute;
 mod content;
 mod history;
 mod link;
+use link::Link;
+mod parser;
 mod tags;
-
-const LINK_REGEX: &str = r"^=>\s*(\S*)\s*(.*)?$";
-const H1_REGEX: &str = r"^#\s+(.*)$";
-const H2_REGEX: &str = r"^##\s+(.*)$";
-const H3_REGEX: &str = r"^###\s+(.*)$";
-const UL_REGEX: &str = r"^\s*\*\s+(.*)$";
-
+use parser::{ParseError, TextElement, TextElement::*};
 
 fn main() {
     // Start up the GTK3 subsystem.
@@ -42,16 +34,16 @@ fn main() {
     {
         let button = gui.back_button();
         let gui = gui.clone();
-        button.connect_clicked(clone!(@weak content_view => move |_| {
+        button.connect_clicked(move |_| {
             go_back(&gui);
-        }));
+        });
     }
 
     // Bind URL bar
     {
         let gui2 = gui.clone();
         let url_bar = gui.url_bar();
-        url_bar.connect_activate(clone!(@weak content_view => move |bar| {
+        url_bar.connect_activate(move |bar| {
             let url = bar.get_text().expect("get_text failed").to_string();
             let full_url = if url.starts_with("gemini://") {
                 url
@@ -59,8 +51,8 @@ fn main() {
                 format!("gemini://{}", url)
             };
 
-            let new_content = visit_url(&gui2, full_url);
-        }));
+            visit_url(&gui2, full_url);
+        });
     }
 
     // Create Pango tags
@@ -93,9 +85,10 @@ fn visit_url(gui: &Arc<Gui>, url: String) {
                     update_url_field(&gui, url.as_str());
                     let content_str = String::from_utf8_lossy(&new_content).to_string();
 
+                    let parsed_content = parser::parse(content_str);
                     clear_buffer(&content_view);
+                    draw_content(&gui, parsed_content);
 
-                    parse_gemini(&gui, content_str);
                     content_view.show_all();
                 }
                 Err(_) => {
@@ -117,92 +110,156 @@ fn visit_url(gui: &Arc<Gui>, url: String) {
     }
 }
 
-fn parse_gemini(gui: &Arc<Gui>, content: String) -> TextBuffer {
-    let link_regexp = Regex::new(LINK_REGEX).unwrap();
-    let h1_regexp = Regex::new(H1_REGEX).unwrap();
-    let h2_regexp = Regex::new(H2_REGEX).unwrap();
-    let h3_regexp = Regex::new(H3_REGEX).unwrap();
-    let ul_regexp = Regex::new(UL_REGEX).unwrap();
+fn draw_content(gui: &Arc<Gui>, content: Vec<Result<TextElement, ParseError>>) -> TextBuffer {
     let content_view = gui.content_view();
     let buffer = content_view.get_buffer().unwrap();
-    let mut i = 0;
 
-    for line in content.lines() {
-        if link_regexp.is_match(line) {
-            let caps = link_regexp.captures(&line).unwrap();
-            let dest = String::from(caps.get(1).map_or("", |m| m.as_str()));
-            let label = String::from(caps.get(2).map_or("", |m| m.as_str()));
+    for el in content {
+        match el {
+            Ok(H1(header)) => {
+                let mut end_iter = buffer.get_end_iter();
+                buffer.insert_markup(
+                    &mut end_iter,
+                    &format!(
+                        "<span foreground=\"#9932CC\" size=\"x-large\">{}</span>\n",
+                        header
+                    ),
+                );
+            }
+            Ok(H2(header)) => {
+                let mut end_iter = buffer.get_end_iter();
+                buffer.insert_markup(
+                    &mut end_iter,
+                    &format!(
+                        "<span foreground=\"#FF1493\" size=\"large\">{}</span>\n",
+                        header
+                    ),
+                );
+            }
+            Ok(H3(header)) => {
+                let mut end_iter = buffer.get_end_iter();
+                buffer.insert_markup(
+                    &mut end_iter,
+                    &format!(
+                        "<span foreground=\"#87CEFA\" size=\"medium\">{}</span>\n",
+                        header
+                    ),
+                );
+            }
+            Ok(ListItem(item)) => {
+                let mut end_iter = buffer.get_end_iter();
+                buffer.insert_markup(
+                    &mut end_iter,
+                    &format!("<span foreground=\"green\">■ {}</span>\n", item),
+                );
+            }
+            Ok(Text(text)) => {
+                let mut end_iter = buffer.get_end_iter();
+                buffer.insert(&mut end_iter, &format!("{}\n", text));
+            }
+            Ok(LinkItem(link_item)) => {
+                draw_link(&gui, link_item);
+            }
+            Err(_) => println!("Something failed."),
+        }
+    }
+    buffer
+}
 
+fn draw_link(gui: &Arc<Gui>, link_item: String) {
+    let content_view = gui.content_view();
+    let buffer = content_view.get_buffer().unwrap();
+
+    match Link::from_str(&link_item) {
+        Ok(Link::Http(url, label)) => {
             let button_label = if label.is_empty() {
-                dest.clone()
+                url.clone().to_string()
+            } else {
+                label
+            };
+            let www_label = format!("{} [WWW]", button_label);
+
+            let button = gtk::Button::new_with_label(&www_label);
+            button.set_tooltip_text(Some(&url.to_string()));
+
+            button.connect_clicked(clone!(@weak gui => move |_| {
+                let new_url = absolute::make(&url.clone().to_string()).unwrap().to_string();
+                visit_url(&gui, new_url);
+            }));
+
+            let mut start_iter = buffer.get_end_iter();
+            let anchor = buffer.create_child_anchor(&mut start_iter).unwrap();
+            content_view.add_child_at_anchor(&button, &anchor);
+            let mut end_iter = buffer.get_end_iter();
+            buffer.insert(&mut end_iter, "\n");
+        }
+        Ok(Link::Gopher(url, label)) => {
+            let button_label = if label.is_empty() {
+                url.clone().to_string()
+            } else {
+                label
+            };
+            let gopher_label = format!("{} [Gopher]", button_label);
+
+            let button = gtk::Button::new_with_label(&gopher_label);
+            button.set_tooltip_text(Some(&url.to_string()));
+
+            button.connect_clicked(clone!(@weak gui => move |_| {
+                let new_url = absolute::make(&url.clone().to_string()).unwrap().to_string();
+                visit_url(&gui, new_url);
+            }));
+
+            let mut start_iter = buffer.get_end_iter();
+            let anchor = buffer.create_child_anchor(&mut start_iter).unwrap();
+            content_view.add_child_at_anchor(&button, &anchor);
+            let mut end_iter = buffer.get_end_iter();
+            buffer.insert(&mut end_iter, "\n");
+        }
+        Ok(Link::Gemini(url, label)) => {
+            let button_label = if label.is_empty() {
+                url.clone().to_string()
             } else {
                 label
             };
 
             let button = gtk::Button::new_with_label(&button_label);
-            button.set_tooltip_text(Some(&dest));
+            button.set_tooltip_text(Some(&url.to_string()));
 
-            button.connect_clicked(clone!(@weak gui => move |button| {
-                let new_url = absolute::make(&dest.clone()).unwrap().to_string();
+            button.connect_clicked(clone!(@weak gui => move |_| {
+                let new_url = absolute::make(&url.clone().to_string()).unwrap().to_string();
                 visit_url(&gui, new_url);
             }));
 
-            let mut start_iter = buffer.get_iter_at_line(i);
+            let mut start_iter = buffer.get_end_iter();
             let anchor = buffer.create_child_anchor(&mut start_iter).unwrap();
             content_view.add_child_at_anchor(&button, &anchor);
             let mut end_iter = buffer.get_end_iter();
             buffer.insert(&mut end_iter, "\n");
-        } else if h1_regexp.is_match(line) {
-            let caps = h1_regexp.captures(&line).unwrap();
-            let header = caps.get(1).map_or("", |m| m.as_str());
-            let mut end_iter = buffer.get_end_iter();
-            buffer.insert_markup(
-                &mut end_iter,
-                &format!(
-                    "<span foreground=\"#9932CC\" size=\"x-large\">{}</span>\n",
-                    header
-                ),
-            );
-        } else if h2_regexp.is_match(line) {
-            let caps = h2_regexp.captures(&line).unwrap();
-            let header = caps.get(1).map_or("", |m| m.as_str());
-            let mut end_iter = buffer.get_end_iter();
-            buffer.insert_markup(
-                &mut end_iter,
-                &format!(
-                    "<span foreground=\"#FF1493\" size=\"large\">{}</span>\n",
-                    header
-                ),
-            );
-        } else if h3_regexp.is_match(line) {
-            let caps = h3_regexp.captures(&line).unwrap();
-            let header = caps.get(1).map_or("", |m| m.as_str());
-            let mut end_iter = buffer.get_end_iter();
-            buffer.insert_markup(
-                &mut end_iter,
-                &format!(
-                    "<span foreground=\"#87CEFA\" size=\"medium\">{}</span>\n",
-                    header
-                ),
-            );
-        } else if ul_regexp.is_match(line) {
-            let caps = ul_regexp.captures(&line).unwrap();
-            let header = caps.get(1).map_or("", |m| m.as_str());
-            let mut end_iter = buffer.get_end_iter();
-            buffer.insert_markup(
-                &mut end_iter,
-                &format!("<span foreground=\"green\">■ {}</span>\n", header),
-            );
-        } else if line.is_empty() {
+        }
+        Ok(Link::Relative(url, label)) => {
+            let button_label = if label.is_empty() {
+                url.clone().to_string()
+            } else {
+                label
+            };
+
+            let button = gtk::Button::new_with_label(&button_label);
+            button.set_tooltip_text(Some(&url.to_string()));
+
+            button.connect_clicked(clone!(@weak gui => move |_| {
+                let new_url = absolute::make(&url.clone().to_string()).unwrap().to_string();
+                visit_url(&gui, new_url);
+            }));
+
+            let mut start_iter = buffer.get_end_iter();
+            let anchor = buffer.create_child_anchor(&mut start_iter).unwrap();
+            content_view.add_child_at_anchor(&button, &anchor);
             let mut end_iter = buffer.get_end_iter();
             buffer.insert(&mut end_iter, "\n");
-        } else {
-            let mut end_iter = buffer.get_end_iter();
-            buffer.insert(&mut end_iter, &format!("{}\n", line));
         }
-        i += 1;
+        Ok(Link::Unknown(_, _)) => (),
+        Err(_) => (),
     }
-    buffer
 }
 
 fn clear_buffer(view: &gtk::TextView) {

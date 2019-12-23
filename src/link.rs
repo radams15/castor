@@ -1,5 +1,4 @@
 extern crate regex;
-use json::JsonValue;
 use regex::Regex;
 use std::str::FromStr;
 use url::Url;
@@ -60,8 +59,4 @@ fn make_link(url: String, label: String) -> Option<Link> {
         Err(url::ParseError::RelativeUrlWithoutBase) => Some(Link::Relative(url, label)),
         _ => None,
     }
-}
-
-pub fn is_gemini(line: &JsonValue) -> bool {
-    line["type"] == "gemini"
 }
