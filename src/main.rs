@@ -9,9 +9,9 @@ use std::sync::Arc;
 
 use glib::clone;
 use gtk::prelude::*;
-use gtk::TextBuffer;
+use gtk::{ResponseType, TextBuffer};
 
-use url::Url;
+use url::{Position, Url};
 
 mod gui;
 use gui::Gui;
@@ -45,17 +45,17 @@ fn main() {
 
     // Bind URL bar
     {
-        let gui2 = gui.clone();
+        let gui_clone = gui.clone();
         let url_bar = gui.url_bar();
-        url_bar.connect_activate(move |bar| {
-            let url = bar.get_text().expect("get_text failed").to_string();
+        url_bar.connect_activate(move |b| {
+            let url = b.get_text().expect("get_text failed").to_string();
             let full_url = if url.starts_with("gemini://") {
                 url
             } else {
                 format!("gemini://{}", url)
             };
 
-            visit_url(&gui2, full_url);
+            visit_url(&gui_clone, full_url);
         });
     }
 
@@ -73,7 +73,7 @@ fn go_back(gui: &Arc<Gui>) {
     }
 }
 
-fn update_url_field(gui: &Arc<Gui>, url: &str) -> () {
+fn update_url_field(gui: &Arc<Gui>, url: &str) {
     let url_bar = gui.url_bar();
     url_bar.get_buffer().set_text(url);
 }
@@ -107,14 +107,9 @@ fn visit_url(gui: &Arc<Gui>, url: String) {
                                 }
                             }
                             Status::Gone(_meta) => {
-                                clear_buffer(&content_view);
-
-                                let buffer = content_view.get_buffer().unwrap();
-                                let mut end_iter = buffer.get_end_iter();
-
-                                buffer.insert_markup(
-                                    &mut end_iter,
-                                    "<span foreground=\"red\" size=\"x-large\">Sorry page is gone.</span>\n",
+                                error_dialog(
+                                    &gui,
+                                    "\nSorry page is gone.\n",
                                 );
                             }
                             Status::RedirectTemporary(new_url)
@@ -123,37 +118,24 @@ fn visit_url(gui: &Arc<Gui>, url: String) {
                             }
                             Status::TransientCertificateRequired(_meta)
                             | Status::AuthorisedCertificatedRequired(_meta) => {
-                                clear_buffer(&content_view);
-
-                                let buffer = content_view.get_buffer().unwrap();
-                                let mut end_iter = buffer.get_end_iter();
-
-                                buffer.insert_markup(
-                                    &mut end_iter,
-                                    "<span foreground=\"red\" size=\"x-large\">You need a valid certificate to access this page.</span>\n",
+                                error_dialog(
+                                    &gui,
+                                    "\nYou need a valid certificate to access this page.\n",
                                 );
                             }
-                            // Status::Input(message) => {
-                            //     prompt_for_answer(s, url_copy, message);
-                            // }
+                            Status::Input(message) => {
+                                input_dialog(&gui, url, &message);
+                            }
                             _ => (),
                         }
                     }
                 }
                 Err(_) => {
-                    let buffer = content_view.get_buffer().unwrap();
-                    let mut end_iter = buffer.get_end_iter();
-
-                    clear_buffer(&content_view);
-
-                    buffer.insert_markup(
-                        &mut end_iter,
-                        "<span foreground=\"red\" size=\"x-large\">ERROR</span>\n",
-                    );
+                    error_dialog(&gui, "\nInvalid URL.\n");
                 }
             },
             Err(_) => {
-                println!("Could not parse {}", url.as_str());
+                error_dialog(&gui, "\nInvalid URL.\n");
             }
         }
     }
@@ -240,7 +222,7 @@ fn draw_link(gui: &Arc<Gui>, link_item: String) {
             insert_gemini_button(&gui, url, label);
         }
         Ok(Link::Relative(url, label)) => {
-            let new_url = absolute::make(&url.clone().to_string()).unwrap();
+            let new_url = absolute::make(&url).unwrap();
             insert_gemini_button(&gui, new_url, label);
         }
         Ok(Link::Unknown(_, _)) => (),
@@ -290,12 +272,50 @@ fn insert_external_button(gui: &Arc<Gui>, url: Url, label: &str) {
     buffer.insert(&mut end_iter, "\n");
 }
 
+fn error_dialog(gui: &Arc<Gui>, message: &str) {
+    let dialog = gtk::Dialog::new_with_buttons(
+        Some("Error"),
+        Some(gui.window()),
+        gtk::DialogFlags::MODAL,
+        &[("Close", ResponseType::Close)],
+    );
+    dialog.set_default_response(ResponseType::Close);
+    dialog.connect_response(|dialog, _| dialog.destroy());
+
+    let content_area = dialog.get_content_area();
+    let message = gtk::Label::new(Some(message));
+    content_area.add(&message);
+
+    dialog.show_all();
+}
+
+fn input_dialog(gui: &Arc<Gui>, url: Url, message: &str) {
+    let dialog = gtk::Dialog::new_with_buttons(
+        Some(message),
+        Some(gui.window()),
+        gtk::DialogFlags::MODAL,
+        &[("Close", ResponseType::Close),("Send", ResponseType::Accept)],
+    );
+
+    let content_area = dialog.get_content_area();
+    let entry = gtk::Entry::new();
+    content_area.add(&entry);
+
+    dialog.show_all();
+
+    if dialog.run() == gtk::ResponseType::Accept {
+        let response = entry.get_text().expect("get_text failed").to_string();
+        let cleaned: &str = &url[..Position::AfterPath];
+        let full_url = format!("{}?{}", cleaned.to_string(), response);
+        visit_url(&gui, full_url);
+    }
+
+    dialog.destroy();
+}
+
 fn clear_buffer(view: &gtk::TextView) {
-    match view.get_buffer() {
-        Some(buffer) => {
-            let (mut start, mut end) = buffer.get_bounds();
-            buffer.delete(&mut start, &mut end);
-        }
-        None => (),
+    if let Some(buffer) = view.get_buffer() {
+        let (mut start, mut end) = buffer.get_bounds();
+        buffer.delete(&mut start, &mut end);
     }
 }

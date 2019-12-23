@@ -68,8 +68,7 @@ fn heading_tag(level: i32) -> gtk::TextTag {
 }
 
 fn text_tag() -> gtk::TextTag {
-    let tag = gtk::TextTag::new(Some("text"));
-    tag
+    gtk::TextTag::new(Some("text"))
 }
 
 fn bold_tag() -> gtk::TextTag {
@@ -79,28 +78,23 @@ fn bold_tag() -> gtk::TextTag {
 }
 
 fn list_tag() -> gtk::TextTag {
-    let tag = gtk::TextTag::new(Some("li"));
-    tag
+    gtk::TextTag::new(Some("li"))
 }
 
 fn del_tag() -> gtk::TextTag {
-    let tag = gtk::TextTag::new(Some("del"));
-    tag
+    gtk::TextTag::new(Some("del"))
 }
 
 fn ref_tag() -> gtk::TextTag {
-    let tag = gtk::TextTag::new(Some("ref"));
-    tag
+    gtk::TextTag::new(Some("ref"))
 }
 
 fn references_tag() -> gtk::TextTag {
-    let tag = gtk::TextTag::new(Some("references"));
-    tag
+    gtk::TextTag::new(Some("references"))
 }
 
 fn sub_tag() -> gtk::TextTag {
-    let tag = gtk::TextTag::new(Some("sub"));
-    tag
+    gtk::TextTag::new(Some("sub"))
 }
 
 fn italic_tag() -> gtk::TextTag {
