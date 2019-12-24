@@ -123,7 +123,7 @@ fn visit_url(gui: &Arc<Gui>, url: String) {
     {
         let content_view = gui.content_view();
 
-        if url == String::from("gemini://::bookmarks") {
+        if url == "gemini://::bookmarks" {
             show_bookmarks(&gui);
             return
         }

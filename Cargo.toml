@@ -1,7 +1,7 @@
 [package]
 name = "castor"
 version = "0.1.0"
-authors = ["Julien Blanchard <julien@sideburns.eu>"]
+authors = ["Julien Blanchard <julien@typed-hole.org>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -13,7 +13,6 @@ gio = "*"
 glib = "*"
 glib-sys = "*"
 pango = "*"
-json = "*"
 open = "*"
 regex = "*"
 native-tls = "*"
