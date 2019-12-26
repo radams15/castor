@@ -11,7 +11,7 @@ Grab a release or build castor and install it manually.
 
 - clone the repository
 
-- install openssl, gtk and pango development headers
+- install openssl, gtk+3, gdk-pixbuf, pango, atk, cairo development libraries.
 
 - run `cargo build --release`
 
@@ -25,9 +25,10 @@ Grab a release or build castor and install it manually.
 - [x] Open links in external apps
 - [x] Support input type
 - [x] Bookmarking
+- [ ] Build executables for multiple platforms
+- [ ] Pass Conman's torture redirections tests
+- [ ] Parse color codes
 - [ ] Support theming
 - [ ] Add loading state
 - [ ] Change initial state
 - [ ] Add/make an icon
-- [ ] Pass Conman's torture redirections tests
-- [ ] Build executables for multiple platforms
