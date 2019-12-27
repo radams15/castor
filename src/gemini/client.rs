@@ -5,7 +5,8 @@ use native_tls::TlsConnector;
 use std::net::{TcpStream, ToSocketAddrs};
 use std::time::Duration;
 
-pub fn get_data(url: &url::Url) -> Result<(Vec<u8>, Vec<u8>), String> {
+
+pub fn get(url: &url::Url) -> Result<(Option<Vec<u8>>, Vec<u8>), String> {
     let host = url.host_str().unwrap();
     let urlf = format!("{}:1965", host);
 
@@ -33,7 +34,7 @@ pub fn get_data(url: &url::Url) -> Result<(Vec<u8>, Vec<u8>), String> {
                                 let clrf_idx = find_clrf(&res);
                                 let content = res.split_off(clrf_idx.unwrap() + 2);
 
-                                Ok((res, content))
+                                Ok((Some(res), content))
                             }
                             Err(e) => Err(format!("Could not connect to {}\n{}", urlf, e)),
                         }

@@ -15,14 +15,12 @@ use url::{Position, Url};
 
 mod gui;
 use gui::Gui;
-mod absolute;
 mod bookmarks;
-mod content;
+mod gemini;
+mod gopher;
 mod history;
-mod link;
-use link::Link;
-mod parser;
-use parser::{ParseError, TextElement, TextElement::*};
+use gemini::link::Link as GeminiLink;
+use gopher::link::Link as GopherLink;
 mod status;
 use status::Status;
 mod tags;
@@ -68,13 +66,13 @@ fn main() {
         let url_bar = gui.url_bar();
         url_bar.connect_activate(move |b| {
             let url = b.get_text().expect("get_text failed").to_string();
-            let full_url = if url.starts_with("gemini://") {
-                url
-            } else {
-                format!("gemini://{}", url)
-            };
+            // let full_url = if url.starts_with("gemini://") {
+            //     url
+            // } else {
+            //     format!("gemini://{}", url)
+            // };
 
-            visit_url(&gui_clone, full_url);
+            visit_url(&gui_clone, url);
         });
     }
 
@@ -109,10 +107,10 @@ fn show_bookmarks(gui: &Arc<Gui>) {
     let content_view = gui.content_view();
 
     let bookmarks_list = format!("# Bookmarks\n\n{}", bookmarks::content());
-    let parsed_content = parser::parse(bookmarks_list);
+    let parsed_content = gemini::parser::parse(bookmarks_list);
 
     clear_buffer(&content_view);
-    draw_content(&gui, parsed_content);
+    draw_gemini_content(&gui, parsed_content);
 
     update_url_field(&gui, "::bookmarks");
 
@@ -121,79 +119,106 @@ fn show_bookmarks(gui: &Arc<Gui>) {
 
 fn visit_url(gui: &Arc<Gui>, url: String) {
     {
-        let content_view = gui.content_view();
-
         if url == "gemini://::bookmarks" {
             show_bookmarks(&gui);
-            return
+            return;
         }
 
-        match absolute::make(url.as_str()) {
-            Ok(url) => match content::get_data(&url) {
-                Ok((meta, new_content)) => {
-                    let meta_str = String::from_utf8_lossy(&meta).to_string();
-                    if let Ok(status) = Status::from_str(&meta_str) {
-                        match status {
-                            Status::Success(meta) => {
-                                if meta.starts_with("text/") {
-                                    // display text files.
-                                    history::append(url.as_str());
-                                    update_url_field(&gui, url.as_str());
-                                    let content_str =
-                                        String::from_utf8_lossy(&new_content).to_string();
+        let content_view = gui.content_view();
 
-                                    let parsed_content = parser::parse(content_str);
-                                    clear_buffer(&content_view);
-                                    draw_content(&gui, parsed_content);
+        if url.starts_with("gemini") {
+            let absolute_url = gemini::absolute::make(url.as_str());
 
-                                    content_view.show_all();
-                                } else {
-                                    // download and try to open the rest.
-                                    content::download(new_content);
+            match absolute_url {
+                Ok(url) => match gemini::client::get(&url) {
+                    Ok((meta, new_content)) => {
+                        let meta_str = String::from_utf8_lossy(&meta.unwrap()).to_string();
+                        if let Ok(status) = Status::from_str(&meta_str) {
+                            match status {
+                                Status::Success(meta) => {
+                                    if meta.starts_with("text/") {
+                                        // display text files.
+                                        history::append(url.as_str());
+                                        update_url_field(&gui, url.as_str());
+                                        let content_str =
+                                            String::from_utf8_lossy(&new_content).to_string();
+
+                                        let parsed_content = gemini::parser::parse(content_str);
+                                        clear_buffer(&content_view);
+                                        draw_gemini_content(&gui, parsed_content);
+
+                                        content_view.show_all();
+                                    } else {
+                                        // download and try to open the rest.
+                                        gemini::client::download(new_content);
+                                    }
                                 }
+                                Status::Gone(_meta) => {
+                                    error_dialog(&gui, "\nSorry page is gone.\n");
+                                }
+                                Status::RedirectTemporary(new_url)
+                                | Status::RedirectPermanent(new_url) => {
+                                    visit_url(&gui, new_url);
+                                }
+                                Status::TransientCertificateRequired(_meta)
+                                | Status::AuthorisedCertificatedRequired(_meta) => {
+                                    error_dialog(
+                                        &gui,
+                                        "\nYou need a valid certificate to access this page.\n",
+                                    );
+                                }
+                                Status::Input(message) => {
+                                    input_dialog(&gui, url, &message);
+                                }
+                                _ => (),
                             }
-                            Status::Gone(_meta) => {
-                                error_dialog(
-                                    &gui,
-                                    "\nSorry page is gone.\n",
-                                );
-                            }
-                            Status::RedirectTemporary(new_url)
-                            | Status::RedirectPermanent(new_url) => {
-                                visit_url(&gui, new_url);
-                            }
-                            Status::TransientCertificateRequired(_meta)
-                            | Status::AuthorisedCertificatedRequired(_meta) => {
-                                error_dialog(
-                                    &gui,
-                                    "\nYou need a valid certificate to access this page.\n",
-                                );
-                            }
-                            Status::Input(message) => {
-                                input_dialog(&gui, url, &message);
-                            }
-                            _ => (),
                         }
                     }
+                    Err(e) => {
+                        error_dialog(&gui, &format!("\n{}\n", e));
+                    }
+                },
+                Err(e) => {
+                    error_dialog(&gui, &format!("\n{}\n", e));
                 }
-                Err(_) => {
-                    error_dialog(&gui, "\nInvalid URL.\n");
-                }
-            },
-            Err(_) => {
-                error_dialog(&gui, "\nInvalid URL.\n");
             }
-        }
+        } else {
+            let absolute_url = gopher::absolute::make(url.as_str());
+            match absolute_url {
+                Ok(url) => match gopher::client::get(&url) {
+                    Ok((_meta, new_content)) => {
+                        history::append(url.as_str());
+                        update_url_field(&gui, url.as_str());
+                        let content_str = String::from_utf8_lossy(&new_content).to_string();
+
+                        let parsed_content = gopher::parser::parse(content_str);
+                        clear_buffer(&content_view);
+                        draw_gopher_content(&gui, parsed_content);
+
+                        content_view.show_all();
+                    }
+                    Err(e) => {
+                        error_dialog(&gui, &format!("\n{}\n", e));
+                    }
+                },
+                Err(e) => {
+                    error_dialog(&gui, &format!("\n{}\n", e));
+                }
+            }
+        };
     }
 }
 
-fn draw_content(gui: &Arc<Gui>, content: Vec<Result<TextElement, ParseError>>) -> TextBuffer {
+fn draw_gemini_content(
+    gui: &Arc<Gui>,
+    content: Vec<Result<gemini::parser::TextElement, gemini::parser::ParseError>>,
+) -> TextBuffer {
     let content_view = gui.content_view();
     let buffer = content_view.get_buffer().unwrap();
 
     for el in content {
         match el {
-            Ok(H1(header)) => {
+            Ok(gemini::parser::TextElement::H1(header)) => {
                 let mut end_iter = buffer.get_end_iter();
                 buffer.insert_markup(
                     &mut end_iter,
@@ -203,7 +228,7 @@ fn draw_content(gui: &Arc<Gui>, content: Vec<Result<TextElement, ParseError>>) -
                     ),
                 );
             }
-            Ok(H2(header)) => {
+            Ok(gemini::parser::TextElement::H2(header)) => {
                 let mut end_iter = buffer.get_end_iter();
                 buffer.insert_markup(
                     &mut end_iter,
@@ -213,7 +238,7 @@ fn draw_content(gui: &Arc<Gui>, content: Vec<Result<TextElement, ParseError>>) -
                     ),
                 );
             }
-            Ok(H3(header)) => {
+            Ok(gemini::parser::TextElement::H3(header)) => {
                 let mut end_iter = buffer.get_end_iter();
                 buffer.insert_markup(
                     &mut end_iter,
@@ -223,19 +248,19 @@ fn draw_content(gui: &Arc<Gui>, content: Vec<Result<TextElement, ParseError>>) -
                     ),
                 );
             }
-            Ok(ListItem(item)) => {
+            Ok(gemini::parser::TextElement::ListItem(item)) => {
                 let mut end_iter = buffer.get_end_iter();
                 buffer.insert_markup(
                     &mut end_iter,
                     &format!("<span foreground=\"green\">■ {}</span>\n", item),
                 );
             }
-            Ok(Text(text)) => {
+            Ok(gemini::parser::TextElement::Text(text)) => {
                 let mut end_iter = buffer.get_end_iter();
                 buffer.insert(&mut end_iter, &format!("{}\n", text));
             }
-            Ok(LinkItem(link_item)) => {
-                draw_link(&gui, link_item);
+            Ok(gemini::parser::TextElement::LinkItem(link_item)) => {
+                draw_gemini_link(&gui, link_item);
             }
             Err(_) => println!("Something failed."),
         }
@@ -243,9 +268,42 @@ fn draw_content(gui: &Arc<Gui>, content: Vec<Result<TextElement, ParseError>>) -
     buffer
 }
 
-fn draw_link(gui: &Arc<Gui>, link_item: String) {
-    match Link::from_str(&link_item) {
-        Ok(Link::Http(url, label)) => {
+fn draw_gopher_content(
+    gui: &Arc<Gui>,
+    content: Vec<Result<gopher::parser::TextElement, gopher::parser::ParseError>>,
+) -> TextBuffer {
+    let content_view = gui.content_view();
+    let buffer = content_view.get_buffer().unwrap();
+
+    for el in content {
+        match el {
+            Ok(gopher::parser::TextElement::Text(text)) => {
+                if text.contains("://") {
+                    draw_gopher_link(&gui, text);
+                } else {
+                    let mut end_iter = buffer.get_end_iter();
+                    buffer.insert(&mut end_iter, &format!("{}\n", text));
+                }
+            }
+            Ok(gopher::parser::TextElement::LinkItem(link_item)) => {
+                draw_gopher_link(&gui, link_item);
+            }
+            Ok(gopher::parser::TextElement::ExternalLinkItem(link_item)) => {
+                draw_gopher_link(&gui, link_item);
+            }
+            Ok(gopher::parser::TextElement::Image(_link_item)) => {
+                // draw_gopher_link(&gui, link_item);
+                ();
+            }
+            Err(_) => println!("Something failed."),
+        }
+    }
+    buffer
+}
+
+fn draw_gemini_link(gui: &Arc<Gui>, link_item: String) {
+    match GeminiLink::from_str(&link_item) {
+        Ok(GeminiLink::Http(url, label)) => {
             let button_label = if label.is_empty() {
                 url.clone().to_string()
             } else {
@@ -255,23 +313,56 @@ fn draw_link(gui: &Arc<Gui>, link_item: String) {
 
             insert_external_button(&gui, url, &www_label);
         }
-        Ok(Link::Gopher(url, label)) => {
+        Ok(GeminiLink::Gopher(url, label)) => {
             let button_label = if label.is_empty() {
                 url.clone().to_string()
             } else {
                 label
             };
             let gopher_label = format!("{} [Gopher]", button_label);
-            insert_external_button(&gui, url, &gopher_label);
+            insert_gemini_button(&gui, url, gopher_label);
         }
-        Ok(Link::Gemini(url, label)) => {
+        Ok(GeminiLink::Gemini(url, label)) => {
             insert_gemini_button(&gui, url, label);
         }
-        Ok(Link::Relative(url, label)) => {
-            let new_url = absolute::make(&url).unwrap();
+        Ok(GeminiLink::Relative(url, label)) => {
+            let new_url = gemini::absolute::make(&url).unwrap();
             insert_gemini_button(&gui, new_url, label);
         }
-        Ok(Link::Unknown(_, _)) => (),
+        Ok(GeminiLink::Unknown(_, _)) => (),
+        Err(_) => (),
+    }
+}
+
+fn draw_gopher_link(gui: &Arc<Gui>, link_item: String) {
+    match GopherLink::from_str(&link_item) {
+        Ok(GopherLink::Http(url, label)) => {
+            let button_label = if label.is_empty() {
+                url.clone().to_string()
+            } else {
+                label
+            };
+            let www_label = format!("{} [WWW]", button_label);
+
+            insert_external_button(&gui, url, &www_label);
+        }
+        Ok(GopherLink::Gopher(url, label)) => {
+            let button_label = if label.is_empty() {
+                url.clone().to_string()
+            } else {
+                label
+            };
+            let gopher_label = format!("{} [Gopher]", button_label);
+            insert_gemini_button(&gui, url, gopher_label);
+        }
+        Ok(GopherLink::Gemini(url, label)) => {
+            insert_gemini_button(&gui, url, label);
+        }
+        Ok(GopherLink::Relative(url, label)) => {
+            let new_url = gemini::absolute::make(&url).unwrap();
+            insert_gemini_button(&gui, new_url, label);
+        }
+        Ok(GopherLink::Unknown(_, _)) => (),
         Err(_) => (),
     }
 }
@@ -357,7 +448,10 @@ fn input_dialog(gui: &Arc<Gui>, url: Url, message: &str) {
         Some(message),
         Some(gui.window()),
         gtk::DialogFlags::MODAL,
-        &[("Close", ResponseType::Close),("Send", ResponseType::Accept)],
+        &[
+            ("Close", ResponseType::Close),
+            ("Send", ResponseType::Accept),
+        ],
     );
 
     let content_area = dialog.get_content_area();
