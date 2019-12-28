@@ -15,15 +15,22 @@ use url::{Position, Url};
 
 mod gui;
 use gui::Gui;
+mod absolute_url;
+use absolute_url::AbsoluteUrl;
 mod bookmarks;
+mod client;
+use client::Client;
 mod gemini;
 mod gopher;
 mod history;
 use gemini::link::Link as GeminiLink;
 use gopher::link::Link as GopherLink;
+mod protocols;
+use protocols::{Protocol, Scheme, Gopher, Gemini};
 mod status;
 use status::Status;
 mod tags;
+
 
 fn main() {
     // Start up the GTK3 subsystem.
@@ -66,13 +73,14 @@ fn main() {
         let url_bar = gui.url_bar();
         url_bar.connect_activate(move |b| {
             let url = b.get_text().expect("get_text failed").to_string();
-            // let full_url = if url.starts_with("gemini://") {
-            //     url
-            // } else {
-            //     format!("gemini://{}", url)
-            // };
 
-            visit_url(&gui_clone, url);
+            if url.starts_with("gemini://") {
+                visit_url(&gui_clone, Gemini { source: url })
+            } else if url.starts_with("gopher://") {
+                visit_url(&gui_clone, Gopher { source: url })
+            } else {
+                visit_url(&gui_clone, Gemini { source: format!("gemini://{}", url) })
+            };
         });
     }
 
@@ -86,7 +94,11 @@ fn main() {
 fn go_back(gui: &Arc<Gui>) {
     let previous = history::get_previous_url();
     if let Some(url) = previous {
-        visit_url(gui, url.to_string())
+        match url.scheme() {
+            "gemini" => visit_url(gui, Gemini { source: url.to_string() }),
+            "gopher" => visit_url(gui, Gopher { source: url.to_string() }),
+            _ => ()
+        }
     }
 }
 
@@ -117,20 +129,20 @@ fn show_bookmarks(gui: &Arc<Gui>) {
     content_view.show_all();
 }
 
-fn visit_url(gui: &Arc<Gui>, url: String) {
+fn visit_url<T: AbsoluteUrl + Client + Protocol>(gui: &Arc<Gui>, url: T) {
     {
-        if url == "gemini://::bookmarks" {
+        if url.get_source_str() == "gemini://::bookmarks" {
             show_bookmarks(&gui);
             return;
         }
 
         let content_view = gui.content_view();
 
-        if url.starts_with("gemini") {
-            let absolute_url = gemini::absolute::make(url.as_str());
+        if url.get_scheme() == Scheme::Gemini {
+            let absolute_url = url.to_absolute_url();
 
             match absolute_url {
-                Ok(url) => match gemini::client::get(&url) {
+                Ok(url2) => match url.get_data() {
                     Ok((meta, new_content)) => {
                         let meta_str = String::from_utf8_lossy(&meta.unwrap()).to_string();
                         if let Ok(status) = Status::from_str(&meta_str) {
@@ -138,8 +150,8 @@ fn visit_url(gui: &Arc<Gui>, url: String) {
                                 Status::Success(meta) => {
                                     if meta.starts_with("text/") {
                                         // display text files.
-                                        history::append(url.as_str());
-                                        update_url_field(&gui, url.as_str());
+                                        history::append(url2.as_str());
+                                        update_url_field(&gui, url2.as_str());
                                         let content_str =
                                             String::from_utf8_lossy(&new_content).to_string();
 
@@ -158,7 +170,7 @@ fn visit_url(gui: &Arc<Gui>, url: String) {
                                 }
                                 Status::RedirectTemporary(new_url)
                                 | Status::RedirectPermanent(new_url) => {
-                                    visit_url(&gui, new_url);
+                                    visit_url(&gui, Gemini { source: new_url });
                                 }
                                 Status::TransientCertificateRequired(_meta)
                                 | Status::AuthorisedCertificatedRequired(_meta) => {
@@ -168,7 +180,7 @@ fn visit_url(gui: &Arc<Gui>, url: String) {
                                     );
                                 }
                                 Status::Input(message) => {
-                                    input_dialog(&gui, url, &message);
+                                    input_dialog(&gui, url2, &message);
                                 }
                                 _ => (),
                             }
@@ -183,7 +195,7 @@ fn visit_url(gui: &Arc<Gui>, url: String) {
                 }
             }
         } else {
-            let absolute_url = gopher::absolute::make(url.as_str());
+            let absolute_url = url.to_absolute_url();
             match absolute_url {
                 Ok(url) => match gopher::client::get(&url) {
                     Ok((_meta, new_content)) => {
@@ -326,7 +338,7 @@ fn draw_gemini_link(gui: &Arc<Gui>, link_item: String) {
             insert_gemini_button(&gui, url, label);
         }
         Ok(GeminiLink::Relative(url, label)) => {
-            let new_url = gemini::absolute::make(&url).unwrap();
+            let new_url = Gemini { source: url }.to_absolute_url().unwrap();
             insert_gemini_button(&gui, new_url, label);
         }
         Ok(GeminiLink::Unknown(_, _)) => (),
@@ -359,7 +371,7 @@ fn draw_gopher_link(gui: &Arc<Gui>, link_item: String) {
             insert_gemini_button(&gui, url, label);
         }
         Ok(GopherLink::Relative(url, label)) => {
-            let new_url = gemini::absolute::make(&url).unwrap();
+            let new_url = Gopher { source: url }.to_absolute_url().unwrap();
             insert_gemini_button(&gui, new_url, label);
         }
         Ok(GopherLink::Unknown(_, _)) => (),
@@ -381,7 +393,11 @@ fn insert_gemini_button(gui: &Arc<Gui>, url: Url, label: String) {
     button.set_tooltip_text(Some(&url.to_string()));
 
     button.connect_clicked(clone!(@weak gui => move |_| {
-        visit_url(&gui, url.to_string());
+        match url.scheme() {
+            "gemini" => visit_url(&gui, Gemini { source: url.to_string() }),
+            "gopher" => visit_url(&gui, Gopher { source: url.to_string() }),
+            _ => ()
+        }
     }));
 
     let mut start_iter = buffer.get_end_iter();
@@ -464,7 +480,8 @@ fn input_dialog(gui: &Arc<Gui>, url: Url, message: &str) {
         let response = entry.get_text().expect("get_text failed").to_string();
         let cleaned: &str = &url[..Position::AfterPath];
         let full_url = format!("{}?{}", cleaned.to_string(), response);
-        visit_url(&gui, full_url);
+
+        visit_url(&gui, Gemini { source: full_url });
     }
 
     dialog.destroy();
