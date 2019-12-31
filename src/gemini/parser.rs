@@ -1,6 +1,8 @@
 extern crate regex;
 use regex::Regex;
 
+use crate::colors::*;
+
 use std::str::FromStr;
 
 #[derive(Debug)]
@@ -19,7 +21,7 @@ pub struct ParseError;
 const H1_REGEX: &str = r"^#\s+(.*)$";
 const H2_REGEX: &str = r"^##\s+(.*)$";
 const H3_REGEX: &str = r"^###\s+(.*)$";
-const LIST_ITEM_REGEX: &str = r"^\s*\*\s+(.*)$";
+const LIST_ITEM_REGEX: &str = r"^\s*\*\s+([^*]*)$";
 const LINK_ITEM_REGEX: &str = r"^=>\s*(\S*)\s*(.*)?$";
 
 impl FromStr for TextElement {
@@ -52,8 +54,7 @@ impl FromStr for TextElement {
         } else if link_item_regexp.is_match(&line) {
             Ok(TextElement::LinkItem(String::from(line)))
         } else {
-            let text_line = String::from(line);
-            Ok(TextElement::Text(text_line))
+            Ok(TextElement::Text(colors::colorize(line)))
         }
     }
 }

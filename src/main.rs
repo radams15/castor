@@ -19,7 +19,7 @@ mod absolute_url;
 use absolute_url::AbsoluteUrl;
 mod bookmarks;
 mod client;
-use client::Client;
+mod colors;
 mod gemini;
 mod gopher;
 mod history;
@@ -129,7 +129,7 @@ fn show_bookmarks(gui: &Arc<Gui>) {
     content_view.show_all();
 }
 
-fn visit_url<T: AbsoluteUrl + Client + Protocol>(gui: &Arc<Gui>, url: T) {
+fn visit_url<T: AbsoluteUrl + Protocol>(gui: &Arc<Gui>, url: T) {
     {
         if url.get_source_str() == "gemini://::bookmarks" {
             show_bookmarks(&gui);
@@ -142,7 +142,7 @@ fn visit_url<T: AbsoluteUrl + Client + Protocol>(gui: &Arc<Gui>, url: T) {
             let absolute_url = url.to_absolute_url();
 
             match absolute_url {
-                Ok(url2) => match url.get_data() {
+                Ok(absolute_url) => match gemini::client::get_data(url) {
                     Ok((meta, new_content)) => {
                         let meta_str = String::from_utf8_lossy(&meta.unwrap()).to_string();
                         if let Ok(status) = Status::from_str(&meta_str) {
@@ -150,8 +150,8 @@ fn visit_url<T: AbsoluteUrl + Client + Protocol>(gui: &Arc<Gui>, url: T) {
                                 Status::Success(meta) => {
                                     if meta.starts_with("text/") {
                                         // display text files.
-                                        history::append(url2.as_str());
-                                        update_url_field(&gui, url2.as_str());
+                                        history::append(absolute_url.as_str());
+                                        update_url_field(&gui, absolute_url.as_str());
                                         let content_str =
                                             String::from_utf8_lossy(&new_content).to_string();
 
@@ -162,7 +162,7 @@ fn visit_url<T: AbsoluteUrl + Client + Protocol>(gui: &Arc<Gui>, url: T) {
                                         content_view.show_all();
                                     } else {
                                         // download and try to open the rest.
-                                        gemini::client::download(new_content);
+                                        client::download(new_content);
                                     }
                                 }
                                 Status::Gone(_meta) => {
@@ -180,7 +180,7 @@ fn visit_url<T: AbsoluteUrl + Client + Protocol>(gui: &Arc<Gui>, url: T) {
                                     );
                                 }
                                 Status::Input(message) => {
-                                    input_dialog(&gui, url2, &message);
+                                    input_dialog(&gui, absolute_url, &message);
                                 }
                                 _ => (),
                             }
@@ -197,10 +197,10 @@ fn visit_url<T: AbsoluteUrl + Client + Protocol>(gui: &Arc<Gui>, url: T) {
         } else {
             let absolute_url = url.to_absolute_url();
             match absolute_url {
-                Ok(url) => match gopher::client::get(&url) {
+                Ok(abs_url) => match gopher::client::get_data(url) {
                     Ok((_meta, new_content)) => {
-                        history::append(url.as_str());
-                        update_url_field(&gui, url.as_str());
+                        history::append(abs_url.as_str());
+                        update_url_field(&gui, abs_url.as_str());
                         let content_str = String::from_utf8_lossy(&new_content).to_string();
 
                         let parsed_content = gopher::parser::parse(content_str);
@@ -269,7 +269,11 @@ fn draw_gemini_content(
             }
             Ok(gemini::parser::TextElement::Text(text)) => {
                 let mut end_iter = buffer.get_end_iter();
-                buffer.insert(&mut end_iter, &format!("{}\n", text));
+                buffer.insert_markup(
+                    &mut end_iter,
+                    &format!("{}\n", text),
+                );
+
             }
             Ok(gemini::parser::TextElement::LinkItem(link_item)) => {
                 draw_gemini_link(&gui, link_item);
@@ -290,12 +294,11 @@ fn draw_gopher_content(
     for el in content {
         match el {
             Ok(gopher::parser::TextElement::Text(text)) => {
-                if text.contains("://") {
-                    draw_gopher_link(&gui, text);
-                } else {
-                    let mut end_iter = buffer.get_end_iter();
-                    buffer.insert(&mut end_iter, &format!("{}\n", text));
-                }
+                let mut end_iter = buffer.get_end_iter();
+                buffer.insert_markup(
+                    &mut end_iter,
+                    &format!("{}\n", text),
+                );
             }
             Ok(gopher::parser::TextElement::LinkItem(link_item)) => {
                 draw_gopher_link(&gui, link_item);

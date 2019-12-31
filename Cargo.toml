@@ -20,6 +20,8 @@ url = "*"
 tempfile = "*"
 dirs = "*"
 lazy_static = "*"
+ansi-parser = "0.6.5"
+percent-encoding="*"
 
 [dependencies.gtk]
 version = "0.8.0"
