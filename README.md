@@ -25,9 +25,11 @@ Grab a release or build castor and install it manually.
 - [x] Open links in external apps
 - [x] Support input type
 - [x] Bookmarking
+- [x] Parse color codes
+- [x] Handle Gopher
+- [ ] Handle Gopher Images
 - [ ] Build executables for multiple platforms
 - [ ] Pass Conman's torture redirections tests
-- [ ] Parse color codes
 - [ ] Support theming
 - [ ] Add loading state
 - [ ] Change initial state
