@@ -1,6 +1,6 @@
+use percent_encoding::percent_decode;
 use std::io::{Read, Write};
 use std::net::TcpStream;
-use percent_encoding::percent_decode;
 
 use crate::Protocol;
 
@@ -11,9 +11,11 @@ pub fn get_data<T: Protocol>(url: T) -> Result<(Option<Vec<u8>>, Vec<u8>), Strin
 
     match TcpStream::connect(&urlf) {
         Ok(mut stream) => {
+            let path = url.path().to_string().split_off(1);
+
             let mut url = match url.query() {
-                Some(query) => format!("{}?{}\r\n", url.path(), query),
-                None => format!("{}\r\n", url.path())
+                Some(query) => format!("{}?{}\n", path, query),
+                None => format!("{}\n", path),
             };
 
             let url = if url.starts_with("/0/") || url.starts_with("/1/") {
@@ -23,6 +25,7 @@ pub fn get_data<T: Protocol>(url: T) -> Result<(Option<Vec<u8>>, Vec<u8>), Strin
             };
 
             let url = percent_decode(url.as_bytes()).decode_utf8().unwrap();
+
             stream.write_all(url.as_bytes()).unwrap();
             let mut res = vec![];
             stream.read_to_end(&mut res).unwrap();

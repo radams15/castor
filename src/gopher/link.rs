@@ -26,11 +26,23 @@ impl FromStr for Link {
             let host = els.next();
 
             if let Some(host) = host {
-                if let Some(path) = path {
+                if let Some(p) = path {
                     let mut text = String::from(label);
                     text.remove(0);
-                    let url = Url::parse(&format!("gopher://{}{}", host, path)).unwrap();
-                    Ok(Link::Gopher(url, text))
+
+                    let path = if p.starts_with('/') {
+                        p.to_string()
+                    } else {
+                        format!("/{}", p)
+                    };
+
+                    match Url::parse(&format!("gopher://{}{}", host, path)) {
+                        Ok(url) => Ok(Link::Gopher(url, text)),
+                        Err(e) => {
+                            println!("ERR {:?}", e);
+                            Err(ParseError)
+                        }
+                    }
                 } else {
                     Err(ParseError)
                 }
@@ -48,7 +60,7 @@ impl FromStr for Link {
                     let url = String::from(url);
                     match make_link(url, label) {
                         Some(link) => Ok(link),
-                        None => Err(ParseError)
+                        None => Err(ParseError),
                     }
                 } else {
                     Err(ParseError)
@@ -63,7 +75,7 @@ impl FromStr for Link {
 
             match make_link(url, label) {
                 Some(link) => Ok(link),
-                None => Err(ParseError)
+                None => Err(ParseError),
             }
         } else {
             Err(ParseError)
