@@ -7,19 +7,28 @@ use crate::Protocol;
 pub fn get_data<T: Protocol>(url: T) -> Result<(Option<Vec<u8>>, Vec<u8>), String> {
     let url = url.get_source_url();
     let host = url.host_str().unwrap().to_string();
-    let urlf = format!("{}:70", host);
+    let port = match url.port() {
+        Some(port) => port,
+        None => 70
+    };
+    let urlf = format!("{}:{}", host, port);
 
     match TcpStream::connect(&urlf) {
         Ok(mut stream) => {
-            let path = url.path().to_string().split_off(1);
+            let mut url_s = url.path().to_string();
+            let path = if url_s.starts_with("/") {
+                url_s.split_off(1)
+            } else {
+                url_s
+            };
 
             let mut url = match url.query() {
                 Some(query) => format!("{}?{}\n", path, query),
                 None => format!("{}\n", path),
             };
 
-            let url = if url.starts_with("/0/") || url.starts_with("/1/") {
-                url.split_off(2)
+            let url = if url.starts_with("0/") || url.starts_with("1/") {
+                url.split_off(1)
             } else {
                 url
             };

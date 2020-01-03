@@ -22,6 +22,7 @@
     <property name="stock">gtk-go-back</property>
   </object>
   <object class="GtkApplicationWindow" id="window">
+    <property name="name">window</property>
     <property name="can_focus">False</property>
     <property name="window_position">center</property>
     <property name="default_width">800</property>

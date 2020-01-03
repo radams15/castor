@@ -24,6 +24,7 @@ impl FromStr for Link {
             let label = els.next().expect("no label");
             let path = els.next();
             let host = els.next();
+            let port = els.next();
 
             if let Some(host) = host {
                 if let Some(p) = path {
@@ -36,12 +37,16 @@ impl FromStr for Link {
                         format!("/{}", p)
                     };
 
-                    match Url::parse(&format!("gopher://{}{}", host, path)) {
-                        Ok(url) => Ok(Link::Gopher(url, text)),
-                        Err(e) => {
-                            println!("ERR {:?}", e);
-                            Err(ParseError)
-                        }
+                    if let Some(port) = port {
+                      match Url::parse(&format!("gopher://{}:{}{}", host, port, path)) {
+                          Ok(url) => Ok(Link::Gopher(url, text)),
+                          Err(e) => {
+                              println!("ERR {:?}", e);
+                              Err(ParseError)
+                          }
+                      }
+                    } else {
+                        Err(ParseError)
                     }
                 } else {
                     Err(ParseError)
