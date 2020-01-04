@@ -36,8 +36,8 @@ impl Gui {
     }
 
     pub fn start(&self) {
-        glib::set_application_name("Castor - Gemini Browser");
-        self.window.set_role("Castor - Gemini Browser");
+        glib::set_application_name("Castor Browser");
+        self.window.set_role("Castor Browser");
         self.window.connect_delete_event(|_, _| { gtk::main_quit(); Inhibit(false) });
         self.window.show_all();
     }
