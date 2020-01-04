@@ -1,6 +1,8 @@
 # Castor
 
-`castor` is a graphical Gemini Project client written in Rust with GTK.
+`castor` is a graphical client for plain-text protocols written in Rust with GTK.
+
+It currently supports the Gemini, Gopher and Finger protocols.
 
 ![Screenshot](https://juliensharing.s3.amazonaws.com/screenshot.png)
 
@@ -20,17 +22,13 @@ Grab a release or build castor and install it manually.
 - Visit gemini://gemini.circumlunar.space
 
 
-## TODO
+## Mailing list
 
-- [x] Open links in external apps
-- [x] Support input type
-- [x] Bookmarking
-- [x] Parse color codes
-- [x] Handle Gopher
-- [ ] Handle Gopher Images
-- [ ] Build executables for multiple platforms
-- [ ] Pass Conman's torture redirections tests
-- [ ] Support theming
-- [ ] Add loading state
-- [ ] Change initial state
-- [ ] Add/make an icon
+If you have questions, feature requests, bugs or you just want to keep up to date with Castor
+
+you can send a message to the [mailing list](https://lists.sr.ht/~julienxx/castor)
+
+
+## Roadmap
+
+You can view my current roadmap [here](https://todo.sr.ht/~julienxx/Castor)
