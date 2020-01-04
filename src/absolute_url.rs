@@ -1,3 +1,4 @@
+use crate::Finger;
 use crate::Gemini;
 use crate::Gopher;
 use crate::Protocol;
@@ -5,6 +6,12 @@ use url::Url;
 
 pub trait AbsoluteUrl {
     fn to_absolute_url(&self) -> Result<url::Url, url::ParseError>;
+}
+
+impl AbsoluteUrl for Finger {
+    fn to_absolute_url(&self) -> Result<url::Url, url::ParseError> {
+        Ok(self.get_source_url())
+    }
 }
 
 impl AbsoluteUrl for Gemini {

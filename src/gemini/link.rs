@@ -5,6 +5,7 @@ use url::Url;
 
 #[derive(Debug)]
 pub enum Link {
+    Finger(Url, String),
     Gemini(Url, String),
     Gopher(Url, String),
     Http(Url, String),
@@ -50,6 +51,7 @@ fn make_link(url: String, label: String) -> Option<Link> {
     let urlp = Url::parse(&url);
     match urlp {
         Ok(url) => match url.scheme() {
+            "finger" => Some(Link::Finger(url, label)),
             "gemini" => Some(Link::Gemini(url, label)),
             "gopher" => Some(Link::Gopher(url, label)),
             "http" => Some(Link::Http(url, label)),

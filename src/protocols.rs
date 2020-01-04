@@ -8,6 +8,21 @@ pub trait Protocol {
 
 pub struct Gemini { pub source: String }
 pub struct Gopher { pub source: String }
+pub struct Finger { pub source: String }
+
+impl Protocol for Finger {
+    fn get_source_str(&self) -> &str {
+        &self.source
+    }
+
+    fn get_source_url(&self) -> Url {
+        Url::parse(&self.source).unwrap()
+    }
+
+    fn get_scheme(&self) -> Scheme {
+        Scheme::Finger
+    }
+}
 
 impl Protocol for Gemini {
     fn get_source_str(&self) -> &str {
@@ -39,6 +54,7 @@ impl Protocol for Gopher {
 
 #[derive(PartialEq)]
 pub enum Scheme {
+    Finger,
     Gemini,
     Gopher
 }

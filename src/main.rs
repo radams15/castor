@@ -20,17 +20,17 @@ use absolute_url::AbsoluteUrl;
 mod bookmarks;
 mod client;
 mod colors;
+mod finger;
 mod gemini;
 mod gopher;
 mod history;
 use gemini::link::Link as GeminiLink;
 use gopher::link::Link as GopherLink;
 mod protocols;
-use protocols::{Protocol, Scheme, Gopher, Gemini};
+use protocols::{Finger, Gemini, Gopher, Protocol, Scheme};
 mod status;
 use status::Status;
 mod tags;
-
 
 fn main() {
     // Start up the GTK3 subsystem.
@@ -78,8 +78,15 @@ fn main() {
                 visit_url(&gui_clone, Gemini { source: url })
             } else if url.starts_with("gopher://") {
                 visit_url(&gui_clone, Gopher { source: url })
+            } else if url.starts_with("finger://") {
+                visit_url(&gui_clone, Finger { source: url })
             } else {
-                visit_url(&gui_clone, Gemini { source: format!("gemini://{}", url) })
+                visit_url(
+                    &gui_clone,
+                    Gemini {
+                        source: format!("gemini://{}", url),
+                    },
+                )
             };
         });
     }
@@ -95,9 +102,25 @@ fn go_back(gui: &Arc<Gui>) {
     let previous = history::get_previous_url();
     if let Some(url) = previous {
         match url.scheme() {
-            "gemini" => visit_url(gui, Gemini { source: url.to_string() }),
-            "gopher" => visit_url(gui, Gopher { source: url.to_string() }),
-            _ => ()
+            "finger" => visit_url(
+                gui,
+                Finger {
+                    source: url.to_string(),
+                },
+            ),
+            "gemini" => visit_url(
+                gui,
+                Gemini {
+                    source: url.to_string(),
+                },
+            ),
+            "gopher" => visit_url(
+                gui,
+                Gopher {
+                    source: url.to_string(),
+                },
+            ),
+            _ => (),
         }
     }
 }
@@ -108,7 +131,8 @@ fn update_url_field(gui: &Arc<Gui>, url: &str) {
 }
 
 fn add_bookmark(gui: &Arc<Gui>) {
-    let current_url = history::get_current_url();
+    let url_bar = gui.url_bar();
+    let current_url = url_bar.get_text();
     if let Some(url) = current_url {
         bookmarks::add(&url);
         info_dialog(&gui, "Bookmark added.");
@@ -130,15 +154,15 @@ fn show_bookmarks(gui: &Arc<Gui>) {
 }
 
 fn visit_url<T: AbsoluteUrl + Protocol>(gui: &Arc<Gui>, url: T) {
-    {
-        if url.get_source_str() == "gemini://::bookmarks" {
-            show_bookmarks(&gui);
-            return;
-        }
+    if url.get_source_str() == "gemini://::bookmarks" {
+        show_bookmarks(&gui);
+        return;
+    }
 
-        let content_view = gui.content_view();
+    let content_view = gui.content_view();
 
-        if url.get_scheme() == Scheme::Gemini {
+    match url.get_scheme() {
+        Scheme::Gemini => {
             let absolute_url = url.to_absolute_url();
 
             match absolute_url {
@@ -194,7 +218,8 @@ fn visit_url<T: AbsoluteUrl + Protocol>(gui: &Arc<Gui>, url: T) {
                     error_dialog(&gui, &format!("\n{}\n", e));
                 }
             }
-        } else {
+        }
+        Scheme::Gopher => {
             let absolute_url = url.to_absolute_url();
             match absolute_url {
                 Ok(abs_url) => match gopher::client::get_data(url) {
@@ -217,7 +242,31 @@ fn visit_url<T: AbsoluteUrl + Protocol>(gui: &Arc<Gui>, url: T) {
                     error_dialog(&gui, &format!("\n{}\n", e));
                 }
             }
-        };
+        }
+        Scheme::Finger => {
+            let absolute_url = url.to_absolute_url();
+            match absolute_url {
+                Ok(abs_url) => match finger::client::get_data(url) {
+                    Ok((_meta, new_content)) => {
+                        history::append(abs_url.as_str());
+                        update_url_field(&gui, abs_url.as_str());
+                        let content_str = String::from_utf8_lossy(&new_content).to_string();
+
+                        let parsed_content = gopher::parser::parse(content_str);
+                        clear_buffer(&content_view);
+                        draw_gopher_content(&gui, parsed_content);
+
+                        content_view.show_all();
+                    }
+                    Err(e) => {
+                        error_dialog(&gui, &format!("\n{}\n", e));
+                    }
+                },
+                Err(e) => {
+                    error_dialog(&gui, &format!("\n{}\n", e));
+                }
+            }
+        }
     }
 }
 
@@ -269,11 +318,7 @@ fn draw_gemini_content(
             }
             Ok(gemini::parser::TextElement::Text(text)) => {
                 let mut end_iter = buffer.get_end_iter();
-                buffer.insert_markup(
-                    &mut end_iter,
-                    &format!("{}\n", text),
-                );
-
+                buffer.insert_markup(&mut end_iter, &format!("{}\n", text));
             }
             Ok(gemini::parser::TextElement::LinkItem(link_item)) => {
                 draw_gemini_link(&gui, link_item);
@@ -295,10 +340,7 @@ fn draw_gopher_content(
         match el {
             Ok(gopher::parser::TextElement::Text(text)) => {
                 let mut end_iter = buffer.get_end_iter();
-                buffer.insert_markup(
-                    &mut end_iter,
-                    &format!("{}\n", text),
-                );
+                buffer.insert_markup(&mut end_iter, &format!("{}\n", text));
             }
             Ok(gopher::parser::TextElement::LinkItem(link_item)) => {
                 draw_gopher_link(&gui, link_item);
@@ -318,15 +360,17 @@ fn draw_gopher_content(
 
 fn draw_gemini_link(gui: &Arc<Gui>, link_item: String) {
     match GeminiLink::from_str(&link_item) {
-        Ok(GeminiLink::Http(url, label)) => {
+        Ok(GeminiLink::Finger(url, label)) => {
             let button_label = if label.is_empty() {
                 url.clone().to_string()
             } else {
                 label
             };
-            let www_label = format!("{} [WWW]", button_label);
-
-            insert_external_button(&gui, url, &www_label);
+            let finger_label = format!("{} [Finger]", button_label);
+            insert_gemini_button(&gui, url, finger_label);
+        }
+        Ok(GeminiLink::Gemini(url, label)) => {
+            insert_gemini_button(&gui, url, label);
         }
         Ok(GeminiLink::Gopher(url, label)) => {
             let button_label = if label.is_empty() {
@@ -337,8 +381,15 @@ fn draw_gemini_link(gui: &Arc<Gui>, link_item: String) {
             let gopher_label = format!("{} [Gopher]", button_label);
             insert_gemini_button(&gui, url, gopher_label);
         }
-        Ok(GeminiLink::Gemini(url, label)) => {
-            insert_gemini_button(&gui, url, label);
+        Ok(GeminiLink::Http(url, label)) => {
+            let button_label = if label.is_empty() {
+                url.clone().to_string()
+            } else {
+                label
+            };
+            let www_label = format!("{} [WWW]", button_label);
+
+            insert_external_button(&gui, url, &www_label);
         }
         Ok(GeminiLink::Relative(url, label)) => {
             let new_url = Gemini { source: url }.to_absolute_url().unwrap();
@@ -397,6 +448,7 @@ fn insert_gemini_button(gui: &Arc<Gui>, url: Url, label: String) {
 
     button.connect_clicked(clone!(@weak gui => move |_| {
         match url.scheme() {
+            "finger" => visit_url(&gui, Finger { source: url.to_string() }),
             "gemini" => visit_url(&gui, Gemini { source: url.to_string() }),
             "gopher" => visit_url(&gui, Gopher { source: url.to_string() }),
             _ => ()
