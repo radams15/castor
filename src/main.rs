@@ -4,6 +4,7 @@ extern crate gtk;
 #[macro_use]
 extern crate lazy_static;
 
+use std::env;
 use std::str::FromStr;
 use std::sync::Arc;
 
@@ -73,29 +74,39 @@ fn main() {
         let url_bar = gui.url_bar();
         url_bar.connect_activate(move |b| {
             let url = b.get_text().expect("get_text failed").to_string();
-
-            if url.starts_with("gemini://") {
-                visit_url(&gui_clone, Gemini { source: url })
-            } else if url.starts_with("gopher://") {
-                visit_url(&gui_clone, Gopher { source: url })
-            } else if url.starts_with("finger://") {
-                visit_url(&gui_clone, Finger { source: url })
-            } else {
-                visit_url(
-                    &gui_clone,
-                    Gemini {
-                        source: format!("gemini://{}", url),
-                    },
-                )
-            };
+            route_url(&gui_clone, url)
         });
     }
 
     // Create Pango tags
     tags::apply_tags(&content_view.get_buffer().unwrap());
 
+    // Visit URL if one was provided
+    let args: Vec<String> = env::args().collect();
+    if args.len() > 1 {
+        let url = String::from(&args[1]);
+        route_url(&gui, url)
+    }
+
     gui.start();
     gtk::main();
+}
+
+fn route_url(gui: &Arc<Gui>, url: String) {
+    if url.starts_with("gemini://") {
+        visit_url(&gui, Gemini { source: url })
+    } else if url.starts_with("gopher://") {
+        visit_url(&gui, Gopher { source: url })
+    } else if url.starts_with("finger://") {
+        visit_url(&gui, Finger { source: url })
+    } else {
+        visit_url(
+            &gui,
+            Gemini {
+                source: format!("gemini://{}", url),
+            },
+        )
+    };
 }
 
 fn go_back(gui: &Arc<Gui>) {
