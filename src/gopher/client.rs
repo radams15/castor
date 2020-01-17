@@ -22,20 +22,15 @@ pub fn get_data<T: Protocol>(url: T) -> Result<(Option<Vec<u8>>, Vec<u8>), Strin
     match socket {
         Some(socket) => match TcpStream::connect_timeout(&socket, Duration::new(5, 0)) {
             Ok(mut stream) => {
-                let mut url_s = url.path().to_string();
-                let path = if url_s.starts_with('/') {
-                    url_s.split_off(1)
-                } else {
-                    url_s
-                };
+                let path = url.path().to_string();
 
                 let mut url = match url.query() {
                     Some(query) => format!("{}?{}\n", path, query),
                     None => format!("{}\n", path),
                 };
 
-                let url = if url.starts_with("0/") || url.starts_with("1/") {
-                    url.split_off(1)
+                let url = if url.starts_with("/0/") || url.starts_with("/1/") {
+                    url.split_off(2)
                 } else {
                     url
                 };
