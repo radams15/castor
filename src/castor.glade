@@ -137,6 +137,8 @@
                 <property name="app_paintable">True</property>
                 <property name="can_focus">True</property>
                 <property name="editable">False</property>
+                <property name="wrap_mode">word</property>
+                <property name="indent">15</property>
                 <property name="cursor_visible">False</property>
                 <property name="monospace">True</property>
               </object>
