@@ -38,7 +38,6 @@ install : target/release/castor
 	$(INSTALL_DATA) data/org.typed-hole.castor-128.png $(sharedir)/icons/hicolor/128x128/apps/org.typed-hole.castor.png
 	# Force icon cache refresh
 	touch $(sharedir)/icons/hicolor
-	cp target/release/castor /usr/bin/castor
 	# Install desktop file
 	$(INSTALL_DATA) data/Castor.desktop $(sharedir)/applications/Castor.desktop
 	update-desktop-database
