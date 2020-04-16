@@ -51,8 +51,9 @@ copy-data :
 uninstall :
 	# Remove the .desktop
 	rm -f $(sharedir)/applications/Castor.desktop
-	# Remove the icon
+	# Remove the icons
 	rm -f $(sharedir)/icons/hicolor/scalable/apps/org.typed-hole.castor.svg
+	rm -f $(sharedir)/icons/hicolor/*x*/apps/org.typed-hole.castor.png
 	# Remove the binary
 	rm -f $(bindir)/bin/castor
 
