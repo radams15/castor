@@ -2,7 +2,7 @@
 PREFIX=/usr
 
 # What to run to install various files
-INSTALL=install
+INSTALL=install -D
 # Run to install the actual binary
 INSTALL_PROGRAM=$(INSTALL)
 # Run to install application data, with differing permissions
@@ -20,8 +20,6 @@ target/release/castor : src
 	cargo build --release
 
 install : target/release/castor install-data
-	# Create the bindir, if need be
-	mkdir -p $(bindir)
 	# Install binary
 	$(INSTALL_PROGRAM) target/release/castor $(bindir)/castor
 
@@ -33,12 +31,6 @@ install-data : copy-data
 
 # Just copy the data files, without updating caches
 copy-data :
-	# Create icon folders if needed
-	mkdir -p $(sharedir)/icons/hicolor/scalable/apps/
-	mkdir -p $(sharedir)/icons/hicolor/16x16/apps/
-	mkdir -p $(sharedir)/icons/hicolor/32x32/apps/
-	mkdir -p $(sharedir)/icons/hicolor/64x64/apps/
-	mkdir -p $(sharedir)/icons/hicolor/128x128/apps/
 	# Install icons
 	$(INSTALL_DATA) data/org.typed-hole.castor.svg $(sharedir)/icons/hicolor/scalable/apps/org.typed-hole.castor.svg
 	$(INSTALL_DATA) data/org.typed-hole.castor-16.png $(sharedir)/icons/hicolor/16x16/apps/org.typed-hole.castor.png
