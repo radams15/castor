@@ -13,17 +13,26 @@ bindir=$(DESTDIR)$(PREFIX)/bin
 sharedir=$(DESTDIR)$(PREFIX)/share
 
 # Just tell make that clean, install, and uninstall doesn't generate files
-.PHONY: clean clean-all install uninstall
+.PHONY: clean clean-all install install-data copy-data uninstall
 
 # Build the application
 target/release/castor : src
 	cargo build --release
 
-install : target/release/castor
+install : target/release/castor install-data
 	# Create the bindir, if need be
 	mkdir -p $(bindir)
 	# Install binary
 	$(INSTALL_PROGRAM) target/release/castor $(bindir)/castor
+
+# Install the data files and update the caches
+install-data : copy-data
+	# Force icon cache refresh
+	touch $(sharedir)/icons/hicolor
+	update-desktop-database
+
+# Just copy the data files, without updating caches
+copy-data :
 	# Create icon folders if needed
 	mkdir -p $(sharedir)/icons/hicolor/scalable/apps/
 	mkdir -p $(sharedir)/icons/hicolor/16x16/apps/
@@ -36,11 +45,8 @@ install : target/release/castor
 	$(INSTALL_DATA) data/org.typed-hole.castor-32.png $(sharedir)/icons/hicolor/32x32/apps/org.typed-hole.castor.png
 	$(INSTALL_DATA) data/org.typed-hole.castor-64.png $(sharedir)/icons/hicolor/64x64/apps/org.typed-hole.castor.png
 	$(INSTALL_DATA) data/org.typed-hole.castor-128.png $(sharedir)/icons/hicolor/128x128/apps/org.typed-hole.castor.png
-	# Force icon cache refresh
-	touch $(sharedir)/icons/hicolor
 	# Install desktop file
 	$(INSTALL_DATA) data/Castor.desktop $(sharedir)/applications/Castor.desktop
-	update-desktop-database
 
 uninstall :
 	# Remove the .desktop
