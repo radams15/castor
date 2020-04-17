@@ -19,6 +19,7 @@ impl FromStr for TextElement {
     fn from_str(line: &str) -> Result<TextElement, ParseError> {
         let els = line.split('\t');
         if els.count() >= 2 {
+            // Gophermap line
             if line.starts_with('0') || line.starts_with('1') {
                 Ok(TextElement::LinkItem(colors::cleanup(line)))
             } else if line.starts_with('i') {
@@ -47,7 +48,14 @@ impl FromStr for TextElement {
                 Ok(TextElement::Text(colors::colorize(line)))
             }
         } else {
-            Ok(TextElement::Text(colors::colorize(line)))
+            // Text line
+            if line.contains("gopher://") {
+                Ok(TextElement::LinkItem(String::from(line)))
+            } else if line.contains("http://") || line.contains("https://") {
+                Ok(TextElement::ExternalLinkItem(String::from(line)))
+            } else {
+                Ok(TextElement::Text(colors::colorize(line)))
+            }
         }
     }
 }
