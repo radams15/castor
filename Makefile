@@ -19,6 +19,9 @@ sharedir=$(DESTDIR)$(PREFIX)/share
 target/release/castor : src
 	cargo build --release
 
+test :
+	cargo test -- --test-threads=1
+
 install : target/release/castor install-data
 	# Install binary
 	$(INSTALL_PROGRAM) target/release/castor $(bindir)/castor

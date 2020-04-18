@@ -50,3 +50,8 @@ pub fn get_previous_url() -> Option<Url> {
         None
     }
 }
+
+#[cfg(test)]
+pub(crate) fn clear() -> () {
+    HISTORY.lock().unwrap().clear();
+}

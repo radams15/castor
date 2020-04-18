@@ -37,7 +37,7 @@ impl AbsoluteUrl for Gemini {
                 } else if url.starts_with("//") {
                     Url::parse(&format!("gemini:{}", url))
                 } else {
-                    Url::parse(&format!("gemini://{}", url))
+                    Url::parse(url)
                 }
             }
         }
@@ -75,7 +75,25 @@ impl AbsoluteUrl for Gopher {
 }
 
 #[test]
+fn test_make_absolute_slash_path_no_current_host() {
+    crate::history::clear();
+
+    let url = "/foo";
+    let absolute_url = Gemini { source: String::from(url) }.to_absolute_url();
+    assert_eq!(absolute_url, Err(url::ParseError::RelativeUrlWithoutBase));
+}
+#[test]
+fn test_make_absolute_just_path_no_current_host() {
+    crate::history::clear();
+
+    let url = "foo";
+    let absolute_url = Gemini { source: String::from(url) }.to_absolute_url();
+    assert_eq!(absolute_url, Err(url::ParseError::RelativeUrlWithoutBase));
+}
+#[test]
 fn test_make_absolute_full_url() {
+    crate::history::clear();
+
     crate::history::append("gemini://typed-hole.org");
     let url = "gemini://typed-hole.org/foo";
     let expected_url = Url::parse("gemini://typed-hole.org/foo").unwrap();
@@ -84,6 +102,8 @@ fn test_make_absolute_full_url() {
 }
 #[test]
 fn test_make_absolute_full_url_no_protocol() {
+    crate::history::clear();
+
     crate::history::append("gemini://typed-hole.org");
     let url = "//typed-hole.org/foo";
     let expected_url = Url::parse("gemini://typed-hole.org/foo").unwrap();
@@ -92,6 +112,8 @@ fn test_make_absolute_full_url_no_protocol() {
 }
 #[test]
 fn test_make_absolute_slash_path() {
+    crate::history::clear();
+
     crate::history::append("gemini://typed-hole.org");
     let url = "/foo";
     let expected_url = Url::parse("gemini://typed-hole.org/foo").unwrap();
@@ -100,6 +122,8 @@ fn test_make_absolute_slash_path() {
 }
 #[test]
 fn test_make_absolute_just_path() {
+    crate::history::clear();
+
     crate::history::append("gemini://typed-hole.org");
     let url = "foo";
     let expected_url = Url::parse("gemini://typed-hole.org/foo").unwrap();
@@ -108,6 +132,8 @@ fn test_make_absolute_just_path() {
 }
 #[test]
 fn test_make_absolute_full_url_no_current_host() {
+    crate::history::clear();
+
     let url = "gemini://typed-hole.org/foo";
     let expected_url = Url::parse("gemini://typed-hole.org/foo").unwrap();
     let absolute_url = Gemini { source: String::from(url) }.to_absolute_url().unwrap();
@@ -115,21 +141,9 @@ fn test_make_absolute_full_url_no_current_host() {
 }
 #[test]
 fn test_make_absolute_full_url_no_protocol_no_current_host() {
+    crate::history::clear();
+
     let url = "//typed-hole.org/foo";
-    let expected_url = Url::parse("gemini://typed-hole.org/foo").unwrap();
-    let absolute_url = Gemini { source: String::from(url) }.to_absolute_url().unwrap();
-    assert_eq!(expected_url, absolute_url);
-}
-#[test]
-fn test_make_absolute_slash_path_no_current_host() {
-    let url = "/foo";
-    let expected_url = Url::parse("gemini://typed-hole.org/foo").unwrap();
-    let absolute_url = Gemini { source: String::from(url) }.to_absolute_url().unwrap();
-    assert_eq!(expected_url, absolute_url);
-}
-#[test]
-fn test_make_absolute_just_path_no_current_host() {
-    let url = "foo";
     let expected_url = Url::parse("gemini://typed-hole.org/foo").unwrap();
     let absolute_url = Gemini { source: String::from(url) }.to_absolute_url().unwrap();
     assert_eq!(expected_url, absolute_url);
