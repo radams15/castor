@@ -288,6 +288,8 @@ fn draw_gemini_content(
     let content_view = gui.content_view();
     let buffer = content_view.get_buffer().unwrap();
 
+    let mut mono_toggle = false;
+
     for el in content {
         match el {
             Ok(gemini::parser::TextElement::H1(header)) => {
@@ -327,9 +329,22 @@ fn draw_gemini_content(
                     &format!("<span foreground=\"green\">■ {}</span>\n", item),
                 );
             }
+            Ok(gemini::parser::TextElement::MonoText(_text)) => {
+                mono_toggle = !mono_toggle;
+            }
             Ok(gemini::parser::TextElement::Text(text)) => {
                 let mut end_iter = buffer.get_end_iter();
-                buffer.insert_markup(&mut end_iter, &format!("{}\n", text));
+                match mono_toggle {
+                    true => {
+                        buffer.insert_markup(
+                            &mut end_iter,
+                            &format!("<span font_family=\"monospace\">{}</span>\n", text),
+                        );
+                    },
+                    false => {
+                        buffer.insert_markup(&mut end_iter, &format!("{}\n", text));
+                    }
+                }
             }
             Ok(gemini::parser::TextElement::LinkItem(link_item)) => {
                 draw_gemini_link(&gui, link_item);

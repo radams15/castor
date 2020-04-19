@@ -13,6 +13,7 @@ pub enum TextElement {
     ListItem(String),
     LinkItem(String),
     Text(String),
+    MonoText(String),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -21,7 +22,7 @@ pub struct ParseError;
 const H1_REGEX: &str = r"^#\s+(.*)$";
 const H2_REGEX: &str = r"^##\s+(.*)$";
 const H3_REGEX: &str = r"^###\s+(.*)$";
-const LIST_ITEM_REGEX: &str = r"^\s*\*\s+([^*]*)$";
+const LIST_ITEM_REGEX: &str = r"^\*\s+([^*]*)$";
 const LINK_ITEM_REGEX: &str = r"^=>\s*(\S*)\s*(.*)?$";
 
 impl FromStr for TextElement {
@@ -53,6 +54,8 @@ impl FromStr for TextElement {
             Ok(TextElement::ListItem(String::from(header)))
         } else if link_item_regexp.is_match(&line) {
             Ok(TextElement::LinkItem(String::from(line)))
+        } else if line == "```" {
+            Ok(TextElement::MonoText(String::from(line)))
         } else {
             Ok(TextElement::Text(colors::colorize(line)))
         }
