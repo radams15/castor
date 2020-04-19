@@ -263,9 +263,9 @@ fn visit_url<T: AbsoluteUrl + Protocol>(gui: &Arc<Gui>, url: T) {
                         update_url_field(&gui, abs_url.as_str());
                         let content_str = String::from_utf8_lossy(&new_content).to_string();
 
-                        let parsed_content = gopher::parser::parse(content_str);
+                        let parsed_content = finger::parser::parse(content_str);
                         clear_buffer(&content_view);
-                        draw_gopher_content(&gui, parsed_content);
+                        draw_finger_content(&gui, parsed_content);
 
                         content_view.show_all();
                     }
@@ -377,6 +377,28 @@ fn draw_gopher_content(
             Ok(gopher::parser::TextElement::Image(_link_item)) => {
                 // draw_gopher_link(&gui, link_item);
                 ();
+            }
+            Err(_) => println!("Something failed."),
+        }
+    }
+    buffer
+}
+
+fn draw_finger_content(
+    gui: &Arc<Gui>,
+    content: Vec<Result<finger::parser::TextElement, finger::parser::ParseError>>,
+) -> TextBuffer {
+    let content_view = gui.content_view();
+    let buffer = content_view.get_buffer().unwrap();
+
+    for el in content {
+        match el {
+            Ok(finger::parser::TextElement::Text(text)) => {
+                let mut end_iter = buffer.get_end_iter();
+                buffer.insert_markup(
+                    &mut end_iter,
+                    &format!("<span font_family=\"monospace\">{}</span>\n", text),
+                );
             }
             Err(_) => println!("Something failed."),
         }
