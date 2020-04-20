@@ -384,7 +384,10 @@ fn draw_gopher_content(
         match el {
             Ok(gopher::parser::TextElement::Text(text)) => {
                 let mut end_iter = buffer.get_end_iter();
-                buffer.insert_markup(&mut end_iter, &format!("{}\n", text));
+                buffer.insert_markup(
+                    &mut end_iter,
+                    &format!("<span font_family=\"monospace\">{}</span>\n", text),
+                );
             }
             Ok(gopher::parser::TextElement::LinkItem(link_item)) => {
                 draw_gopher_link(&gui, link_item);
