@@ -29,6 +29,29 @@ You will need some development libraries:
 - Open Castor and visit gemini://gemini.circumlunar.space and enjoy your trip!
 
 
+## Changing colors
+
+You can change colors and delimiters for Headers, Lists, Text and Background.
+Edit `~/.local/share/castor_settings.toml` and add the values you need.
+These are the keys currently supported, you can use hex codes, plain colors names or even emojis!
+
+```
+[colors]
+h1 = "red"
+h2 = "#FF6347"
+h3 = "green"
+list = "#C71585"
+text = "#FF1493"
+background = "#FFC0CB"
+
+[characters]
+h1 = ">"
+h2 = "))"
+h3 = "}}}"
+list = "🌼"
+```
+
+
 ## Using client certificate
 
 Castor expects your certificates to be placed in your home directory and named after the gemini capsule domain.
