@@ -3,7 +3,25 @@
 A graphical client for plain-text protocols written in Rust with GTK.
 It currently supports the Gemini, Gopher and Finger protocols.
 
-![Screenshot](https://juliensharing.s3.amazonaws.com/castor-icon.png)
+Gemini:
+
+![Screenshot](https://juliensharing.s3.amazonaws.com/castor_gemini.png)
+
+
+Gopher:
+
+![Screenshot](https://juliensharing.s3.amazonaws.com/castor_gopher.png)
+
+
+Finger:
+
+![Screenshot](https://juliensharing.s3.amazonaws.com/castor_finger.png)
+
+
+Gemini with some theming:
+
+![Screenshot](https://juliensharing.s3.amazonaws.com/castor_theme.png)
+
 
 
 ## Installation
