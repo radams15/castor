@@ -39,9 +39,14 @@ fn main() {
 
     // Create the main window.
     let gui = Arc::new(Gui::new());
-    let content_view = gui.content_view();
-    let color = gdk::RGBA::from_str(&settings::background_color()).unwrap();
-    content_view.override_background_color(gtk::StateFlags::NORMAL, Some(&color));
+    match settings::background_color() {
+        Some(color) => {
+            let content_view = gui.content_view();
+            let color = gdk::RGBA::from_str(&color).unwrap();
+            content_view.override_background_color(gtk::StateFlags::NORMAL, Some(&color));
+        },
+        None => ()
+    }
 
     // Bind back button
     {

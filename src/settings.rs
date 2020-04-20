@@ -80,13 +80,10 @@ pub fn text_color() -> String {
     }
 }
 
-pub fn background_color() -> String {
+pub fn background_color() -> Option<String> {
     match read().colors {
-        Some(colors) => match colors.background {
-            Some(color) => color,
-            None => String::from("white")
-        }
-        None => String::from("white")
+        Some(colors) => colors.background,
+        None => None
     }
 }
 
