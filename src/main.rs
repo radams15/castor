@@ -180,6 +180,7 @@ fn visit_url<T: AbsoluteUrl + Protocol>(gui: &Arc<Gui>, url: T) {
                 Ok(absolute_url) => match gemini::client::get_data(url) {
                     Ok((meta, new_content)) => {
                         let meta_str = String::from_utf8_lossy(&meta.unwrap()).to_string();
+                        println!("{:?}", meta_str);
                         if let Ok(status) = Status::from_str(&meta_str) {
                             match status {
                                 Status::Success(meta) => {
