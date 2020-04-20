@@ -29,6 +29,13 @@ You will need some development libraries:
 - Open Castor and visit gemini://gemini.circumlunar.space and enjoy your trip!
 
 
+## Using client certificate
+
+Castor expects your certificates to be placed in your home directory and named after the gemini capsule domain.
+For example to water your plant on `gemini://astrobotany.mozz.us/plant` you will need to have `astrobotany.mozz.us.crt`
+and `astrobotany.mozz.us.key` available in your home.
+
+
 ## Mailing list
 
 If you have questions, feature requests, bugs or you just want to keep up to date with Castor you
