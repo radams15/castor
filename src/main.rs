@@ -29,6 +29,7 @@ use gemini::link::Link as GeminiLink;
 use gopher::link::Link as GopherLink;
 mod protocols;
 use protocols::{Finger, Gemini, Gopher, Protocol, Scheme};
+mod settings;
 mod status;
 use status::Status;
 
@@ -38,6 +39,9 @@ fn main() {
 
     // Create the main window.
     let gui = Arc::new(Gui::new());
+    let content_view = gui.content_view();
+    let color = gdk::RGBA::from_str(&settings::background_color()).unwrap();
+    content_view.override_background_color(gtk::StateFlags::NORMAL, Some(&color));
 
     // Bind back button
     {
@@ -293,7 +297,9 @@ fn draw_gemini_content(
                 buffer.insert_markup(
                     &mut end_iter,
                     &format!(
-                        "<span foreground=\"#9932CC\" size=\"x-large\">{}</span>\n",
+                        "<span foreground=\"{}\" size=\"x-large\">{}{}</span>\n",
+                        settings::h1_color(),
+                        settings::h1_character(),
                         header
                     ),
                 );
@@ -303,7 +309,9 @@ fn draw_gemini_content(
                 buffer.insert_markup(
                     &mut end_iter,
                     &format!(
-                        "<span foreground=\"#FF1493\" size=\"large\">{}</span>\n",
+                        "<span foreground=\"{}\" size=\"large\">{}{}</span>\n",
+                        settings::h2_color(),
+                        settings::h2_character(),
                         header
                     ),
                 );
@@ -313,7 +321,9 @@ fn draw_gemini_content(
                 buffer.insert_markup(
                     &mut end_iter,
                     &format!(
-                        "<span foreground=\"#87CEFA\" size=\"medium\">{}</span>\n",
+                        "<span foreground=\"{}\" size=\"medium\">{}{}</span>\n",
+                        settings::h3_color(),
+                        settings::h3_character(),
                         header
                     ),
                 );
@@ -322,7 +332,10 @@ fn draw_gemini_content(
                 let mut end_iter = buffer.get_end_iter();
                 buffer.insert_markup(
                     &mut end_iter,
-                    &format!("<span foreground=\"green\">■ {}</span>\n", item),
+                    &format!("<span foreground=\"{}\">{} {}</span>\n",
+                             settings::list_color(),
+                             settings::list_character(),
+                             item),
                 );
             }
             Ok(gemini::parser::TextElement::MonoText(_text)) => {
@@ -334,11 +347,15 @@ fn draw_gemini_content(
                     true => {
                         buffer.insert_markup(
                             &mut end_iter,
-                            &format!("<span font_family=\"monospace\">{}</span>\n", text),
+                            &format!("<span foreground=\"{}\" font_family=\"monospace\">{}</span>\n",
+                                     settings::text_color(),
+                                     text),
                         );
                     },
                     false => {
-                        buffer.insert_markup(&mut end_iter, &format!("{}\n", text));
+                        buffer.insert_markup(&mut end_iter, &format!("<span foreground=\"{}\">{}</span>\n",
+                                                                     settings::text_color(),
+                                                                     text));
                     }
                 }
             }
@@ -489,6 +506,7 @@ fn insert_gemini_button(gui: &Arc<Gui>, url: Url, label: String) {
 
     let button = gtk::Button::new_with_label(&button_label);
     button.set_tooltip_text(Some(&url.to_string()));
+    // button.set_background_color();
 
     button.connect_clicked(clone!(@weak gui => move |_| {
         match url.scheme() {
