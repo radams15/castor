@@ -29,7 +29,7 @@ pub fn get_data<T: Protocol>(url: T) -> Result<(Option<Vec<u8>>, Vec<u8>), Strin
                     None => format!("{}\n", path),
                 };
 
-                let url = if url.starts_with("/0/") || url.starts_with("/1/") {
+                let url = if url.starts_with("/0/") || url.starts_with("/1/") || url.starts_with("/g/") {
                     url.split_off(2)
                 } else {
                     url

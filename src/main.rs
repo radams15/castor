@@ -393,9 +393,8 @@ fn draw_gopher_content(
             Ok(gopher::parser::TextElement::ExternalLinkItem(link_item)) => {
                 draw_gopher_link(&gui, link_item);
             }
-            Ok(gopher::parser::TextElement::Image(_link_item)) => {
-                // draw_gopher_link(&gui, link_item);
-                ();
+            Ok(gopher::parser::TextElement::Image(link_item)) => {
+                draw_gopher_link(&gui, link_item);
             }
             Err(_) => println!("Something failed."),
         }
@@ -434,10 +433,10 @@ fn draw_gemini_link(gui: &Arc<Gui>, link_item: String) {
                 label
             };
             let finger_label = format!("{} [Finger]", button_label);
-            insert_gemini_button(&gui, url, finger_label);
+            insert_button(&gui, url, finger_label);
         }
         Ok(GeminiLink::Gemini(url, label)) => {
-            insert_gemini_button(&gui, url, label);
+            insert_button(&gui, url, label);
         }
         Ok(GeminiLink::Gopher(url, label)) => {
             let button_label = if label.is_empty() {
@@ -446,7 +445,7 @@ fn draw_gemini_link(gui: &Arc<Gui>, link_item: String) {
                 label
             };
             let gopher_label = format!("{} [Gopher]", button_label);
-            insert_gemini_button(&gui, url, gopher_label);
+            insert_button(&gui, url, gopher_label);
         }
         Ok(GeminiLink::Http(url, label)) => {
             let button_label = if label.is_empty() {
@@ -460,7 +459,7 @@ fn draw_gemini_link(gui: &Arc<Gui>, link_item: String) {
         }
         Ok(GeminiLink::Relative(url, label)) => {
             let new_url = Gemini { source: url }.to_absolute_url().unwrap();
-            insert_gemini_button(&gui, new_url, label);
+            insert_button(&gui, new_url, label);
         }
         Ok(GeminiLink::Unknown(_, _)) => (),
         Err(_) => (),
@@ -486,21 +485,30 @@ fn draw_gopher_link(gui: &Arc<Gui>, link_item: String) {
                 label
             };
             let gopher_label = format!("{} [Gopher]", button_label);
-            insert_gemini_button(&gui, url, gopher_label);
+            insert_button(&gui, url, gopher_label);
+        }
+        Ok(GopherLink::Image(url, label)) => {
+            let button_label = if label.is_empty() {
+                url.clone().to_string()
+            } else {
+                label
+            };
+            let image_label = format!("{} [Image]", button_label);
+            insert_gopher_file_button(&gui, url, image_label);
         }
         Ok(GopherLink::Gemini(url, label)) => {
-            insert_gemini_button(&gui, url, label);
+            insert_button(&gui, url, label);
         }
         Ok(GopherLink::Relative(url, label)) => {
             let new_url = Gopher { source: url }.to_absolute_url().unwrap();
-            insert_gemini_button(&gui, new_url, label);
+            insert_button(&gui, new_url, label);
         }
         Ok(GopherLink::Unknown(_, _)) => (),
         Err(_) => (),
     }
 }
 
-fn insert_gemini_button(gui: &Arc<Gui>, url: Url, label: String) {
+fn insert_button(gui: &Arc<Gui>, url: Url, label: String) {
     let content_view = gui.content_view();
     let buffer = content_view.get_buffer().unwrap();
 
@@ -512,7 +520,6 @@ fn insert_gemini_button(gui: &Arc<Gui>, url: Url, label: String) {
 
     let button = gtk::Button::new_with_label(&button_label);
     button.set_tooltip_text(Some(&url.to_string()));
-    // button.set_background_color();
 
     button.connect_clicked(clone!(@weak gui => move |_| {
         match url.scheme() {
@@ -522,6 +529,31 @@ fn insert_gemini_button(gui: &Arc<Gui>, url: Url, label: String) {
             _ => ()
         }
     }));
+
+    let mut start_iter = buffer.get_end_iter();
+    let anchor = buffer.create_child_anchor(&mut start_iter).unwrap();
+    content_view.add_child_at_anchor(&button, &anchor);
+    let mut end_iter = buffer.get_end_iter();
+    buffer.insert(&mut end_iter, "\n");
+}
+
+fn insert_gopher_file_button(gui: &Arc<Gui>, url: Url, label: String) {
+    let content_view = gui.content_view();
+    let buffer = content_view.get_buffer().unwrap();
+
+    let button_label = if label.is_empty() {
+        url.clone().to_string()
+    } else {
+        label
+    };
+
+    let button = gtk::Button::new_with_label(&button_label);
+    button.set_tooltip_text(Some(&url.to_string()));
+
+    button.connect_clicked(move |_| {
+        let (_meta, content) = gopher::client::get_data(Gopher {source: url.to_string()}).unwrap();
+        client::download(content);
+    });
 
     let mut start_iter = buffer.get_end_iter();
     let anchor = buffer.create_child_anchor(&mut start_iter).unwrap();

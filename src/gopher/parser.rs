@@ -30,12 +30,8 @@ impl FromStr for TextElement {
                 Ok(TextElement::Text(colors::colorize(&text)))
             } else if line.starts_with('h') {
                 Ok(TextElement::ExternalLinkItem(colors::cleanup(line)))
-            } else if line.starts_with('I') {
-                let mut els = line.split('\t');
-                let text = els.next().expect("");
-                let mut text = String::from(text);
-                text.remove(0);
-                Ok(TextElement::Image(colors::cleanup(&text)))
+            } else if line.starts_with('I') || line.starts_with('g') {
+                Ok(TextElement::Image(colors::cleanup(line)))
             } else if line.contains("://") {
                 if line.contains("gopher://") {
                     Ok(TextElement::LinkItem(String::from(line)))
