@@ -28,24 +28,28 @@ impl FromStr for Link {
             let port = els.next();
 
             if let Some(host) = host {
-                if let Some(p) = path {
+                if let Some(path) = path {
                     let mut text = String::from(label);
                     let selector = text.remove(0);
 
-                    let path = if p.starts_with('/') {
-                        p.to_string()
-                    } else {
-                        format!("/{}", p)
-                    };
-
                     if let Some(port) = port {
-                      match Url::parse(&format!("gopher://{}:{}/{}{}", host, port, selector, path)) {
-                          Ok(url) => Ok(Link::Gopher(url, text)),
-                          Err(e) => {
-                              println!("ERR {:?}", e);
-                              Err(ParseError)
-                          }
-                      }
+                        if path != "" {
+                            match Url::parse(&format!("gopher://{}:{}/{}{}", host, port, selector, path)) {
+                                Ok(url) => Ok(Link::Gopher(url, text)),
+                                Err(e) => {
+                                    println!("ERR {:?}", e);
+                                    Err(ParseError)
+                                }
+                            }
+                        } else {
+                            match Url::parse(&format!("gopher://{}:{}", host, port)) {
+                                Ok(url) => Ok(Link::Gopher(url, text)),
+                                Err(e) => {
+                                    println!("ERR {:?}", e);
+                                    Err(ParseError)
+                                }
+                            }
+                        }
                     } else {
                         Err(ParseError)
                     }
