@@ -4,7 +4,6 @@ extern crate gtk;
 #[macro_use]
 extern crate lazy_static;
 
-use std::env;
 use std::str::FromStr;
 use std::sync::Arc;
 
@@ -85,11 +84,10 @@ fn main() {
         });
     }
 
-    // Visit URL if one was provided
-    let args: Vec<String> = env::args().collect();
-    if args.len() > 1 {
-        let url = String::from(&args[1]);
-        route_url(&gui, url)
+    // Visit start URL setting if provided
+    match settings::start_url() {
+        Some(url) => route_url(&gui, url),
+        None => ()
     }
 
     gui.start();

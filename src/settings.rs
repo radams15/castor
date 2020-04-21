@@ -8,8 +8,14 @@ use serde_derive::Deserialize;
 
 #[derive(Deserialize)]
 struct Settings {
+    general: Option<General>,
     colors: Option<Color>,
     characters: Option<Character>,
+}
+
+#[derive(Deserialize)]
+struct General {
+    start_url: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -28,6 +34,13 @@ struct Character {
     h2: Option<String>,
     h3: Option<String>,
     list: Option<String>,
+}
+
+pub fn start_url() -> Option<String> {
+    match read().general {
+        Some(general) => general.start_url,
+        None => None
+    }
 }
 
 pub fn h1_color() -> String {

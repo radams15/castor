@@ -1,3 +1,6 @@
+[general]
+start_url = "gemini://gemini.circumlunar.space/capcom"
+
 [colors]
 h1 = "red"
 h2 = "#FF6347"
