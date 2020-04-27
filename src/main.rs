@@ -292,6 +292,11 @@ fn draw_gemini_content(
     let buffer = content_view.get_buffer().unwrap();
 
     let mut mono_toggle = false;
+    let font_family = if settings::gemini_monospace() {
+        "monospace"
+    } else {
+        "sans"
+    };
 
     for el in content {
         match el {
@@ -300,8 +305,9 @@ fn draw_gemini_content(
                 buffer.insert_markup(
                     &mut end_iter,
                     &format!(
-                        "<span foreground=\"{}\" size=\"x-large\">{}{}</span>\n",
+                        "<span foreground=\"{}\" size=\"x-large\" font_family=\"{}\">{}{}</span>\n",
                         settings::h1_color(),
+                        font_family,
                         settings::h1_character(),
                         header
                     ),
@@ -312,8 +318,9 @@ fn draw_gemini_content(
                 buffer.insert_markup(
                     &mut end_iter,
                     &format!(
-                        "<span foreground=\"{}\" size=\"large\">{}{}</span>\n",
+                        "<span foreground=\"{}\" size=\"large\" font_family=\"{}\">{}{}</span>\n",
                         settings::h2_color(),
+                        font_family,
                         settings::h2_character(),
                         header
                     ),
@@ -324,8 +331,9 @@ fn draw_gemini_content(
                 buffer.insert_markup(
                     &mut end_iter,
                     &format!(
-                        "<span foreground=\"{}\" size=\"medium\">{}{}</span>\n",
+                        "<span foreground=\"{}\" size=\"medium\" font_family=\"{}\">{}{}</span>\n",
                         settings::h3_color(),
+                        font_family,
                         settings::h3_character(),
                         header
                     ),
@@ -335,8 +343,9 @@ fn draw_gemini_content(
                 let mut end_iter = buffer.get_end_iter();
                 buffer.insert_markup(
                     &mut end_iter,
-                    &format!("<span foreground=\"{}\">{} {}</span>\n",
+                    &format!("<span foreground=\"{}\" font_family=\"{}\">{} {}</span>\n",
                              settings::list_color(),
+                             font_family,
                              settings::list_character(),
                              item),
                 );
@@ -356,8 +365,9 @@ fn draw_gemini_content(
                         );
                     },
                     false => {
-                        buffer.insert_markup(&mut end_iter, &format!("<span foreground=\"{}\">{}</span>\n",
+                        buffer.insert_markup(&mut end_iter, &format!("<span foreground=\"{}\" font_family=\"{}\">{}</span>\n",
                                                                      settings::text_color(),
+                                                                     font_family,
                                                                      text));
                     }
                 }
@@ -382,9 +392,15 @@ fn draw_gopher_content(
         match el {
             Ok(gopher::parser::TextElement::Text(text)) => {
                 let mut end_iter = buffer.get_end_iter();
+                let font_family = if settings::gopher_monospace() {
+                    "font_family=\"monospace\""
+                } else {
+                    "font_family=\"serif\""
+                };
+
                 buffer.insert_markup(
                     &mut end_iter,
-                    &format!("<span font_family=\"monospace\">{}</span>\n", text),
+                    &format!("<span foreground=\"{}\" {}>{}</span>\n", settings::text_color(), font_family, text),
                 );
             }
             Ok(gopher::parser::TextElement::LinkItem(link_item)) => {
@@ -413,9 +429,15 @@ fn draw_finger_content(
         match el {
             Ok(finger::parser::TextElement::Text(text)) => {
                 let mut end_iter = buffer.get_end_iter();
+                let font_family = if settings::finger_monospace() {
+                    "font_family=\"monospace\""
+                } else {
+                    "font_family=\"serif\""
+                };
+
                 buffer.insert_markup(
                     &mut end_iter,
-                    &format!("<span font_family=\"monospace\">{}</span>\n", text),
+                    &format!("<span foreground=\"{}\" {}>{}</span>\n", settings::text_color(), font_family, text),
                 );
             }
             Err(_) => println!("Something failed."),

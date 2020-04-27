@@ -12,6 +12,7 @@ struct Settings {
     general: Option<General>,
     colors: Option<Color>,
     characters: Option<Character>,
+    monospace: Option<Monospace>,
 }
 
 #[derive(Deserialize)]
@@ -35,6 +36,13 @@ struct Character {
     h2: Option<String>,
     h3: Option<String>,
     list: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct Monospace {
+    finger: Option<bool>,
+    gemini: Option<bool>,
+    gopher: Option<bool>,
 }
 
 pub fn start_url() -> Option<String> {
@@ -138,6 +146,36 @@ pub fn list_character() -> String {
             None => String::from("■")
         }
         None => String::from("■")
+    }
+}
+
+pub fn finger_monospace() -> bool {
+    match read().monospace {
+        Some(monospace) => match monospace.finger {
+            Some(setting) => setting,
+            None => true
+        }
+        None => true
+    }
+}
+
+pub fn gemini_monospace() -> bool {
+    match read().monospace {
+        Some(monospace) => match monospace.gemini {
+            Some(setting) => setting,
+            None => true
+        }
+        None => true
+    }
+}
+
+pub fn gopher_monospace() -> bool {
+    match read().monospace {
+        Some(monospace) => match monospace.gopher {
+            Some(setting) => setting,
+            None => true
+        }
+        None => true
     }
 }
 

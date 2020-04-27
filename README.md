@@ -70,6 +70,11 @@ h1 = ">"
 h2 = "))"
 h3 = "}}}"
 list = "🌼"
+
+[monospace]
+gemini=false
+gopher=true
+finger=true
 ```
 
 
