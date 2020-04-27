@@ -1,5 +1,6 @@
 extern crate dirs;
 
+use std::fs;
 use std::fs::File;
 use std::fs::OpenOptions;
 use std::io::Read;
@@ -151,9 +152,11 @@ fn read() -> Settings {
 }
 
 fn settings_file() -> File {
-    let mut bookmarks = dirs::data_local_dir().unwrap();
-    bookmarks.push("castor_settings.toml");
-    let file_path = bookmarks.into_os_string();
+    let mut settings = dirs::config_dir().unwrap();
+    settings.push("castor");
+    fs::create_dir_all(&settings).unwrap();
+    settings.push("settings.toml");
+    let file_path = settings.into_os_string();
 
     OpenOptions::new()
         .create(true)

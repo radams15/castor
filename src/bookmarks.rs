@@ -1,4 +1,6 @@
 extern crate dirs;
+
+use std::fs;
 use std::fs::File;
 use std::fs::OpenOptions;
 use std::io::{Read, Write};
@@ -22,7 +24,9 @@ pub fn content() -> String {
 
 fn bookmarks_file() -> File {
     let mut bookmarks = dirs::data_local_dir().unwrap();
-    bookmarks.push("castor_bookmarks");
+    bookmarks.push("castor");
+    fs::create_dir_all(&bookmarks).unwrap();
+    bookmarks.push("bookmarks");
     let file_path = bookmarks.into_os_string();
 
     OpenOptions::new()
