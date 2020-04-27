@@ -50,7 +50,7 @@ You will need some development libraries:
 ## Changing settings
 
 You can change some settings like initial URL, colors and delimiters for Headers, Lists, Text and Background.
-Edit `~/.local/share/castor_settings.toml` and add the values you need.
+Edit `~/.config/castor/settings.toml` and add the values you need.
 These are the keys currently supported, you can use hex codes, plain colors names or even emojis!
 
 ```
