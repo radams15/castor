@@ -1,6 +1,7 @@
-use std::io::{Read, Write};
 use native_tls::TlsConnector;
+use std::io::{Read, Write};
 use std::net::{TcpStream, ToSocketAddrs};
+use std::thread;
 use std::time::Duration;
 
 use crate::protocols::*;
@@ -19,8 +20,8 @@ pub fn get_data<T: Protocol>(url: T) -> Result<(Option<Vec<u8>>, Vec<u8>), Strin
             let der = cert.to_der().unwrap();
             let identity = native_tls::Identity::from_pkcs12(&der, "").unwrap();
             builder.identity(identity);
-        },
-        None => ()
+        }
+        None => (),
     };
 
     let connector = builder.build().unwrap();
@@ -35,7 +36,7 @@ pub fn get_data<T: Protocol>(url: T) -> Result<(Option<Vec<u8>>, Vec<u8>), Strin
                         let mstream = connector.connect(&host, stream);
 
                         match mstream {
-                            Ok(mut stream) => {
+                            Ok(mut stream) => thread::spawn(move || {
                                 let url = format!("{}\r\n", url);
                                 stream.write_all(url.as_bytes()).unwrap();
                                 let mut res = vec![];
@@ -45,7 +46,9 @@ pub fn get_data<T: Protocol>(url: T) -> Result<(Option<Vec<u8>>, Vec<u8>), Strin
                                 let content = res.split_off(clrf_idx.unwrap() + 2);
 
                                 Ok((Some(res), content))
-                            }
+                            })
+                            .join()
+                            .unwrap(),
                             Err(e) => Err(format!("Could not connect to {}\n{}", urlf, e)),
                         }
                     }

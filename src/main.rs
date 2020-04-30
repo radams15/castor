@@ -43,8 +43,8 @@ fn main() {
             let content_view = gui.content_view();
             let color = gdk::RGBA::from_str(&color).unwrap();
             content_view.override_background_color(gtk::StateFlags::NORMAL, Some(&color));
-        },
-        None => ()
+        }
+        None => (),
     }
 
     // Bind back button
@@ -87,7 +87,7 @@ fn main() {
     // Visit start URL setting if provided
     match settings::start_url() {
         Some(url) => route_url(&gui, url),
-        None => ()
+        None => (),
     }
 
     gui.start();
@@ -343,11 +343,13 @@ fn draw_gemini_content(
                 let mut end_iter = buffer.get_end_iter();
                 buffer.insert_markup(
                     &mut end_iter,
-                    &format!("<span foreground=\"{}\" font_family=\"{}\">{} {}</span>\n",
-                             settings::list_color(),
-                             font_family,
-                             settings::list_character(),
-                             item),
+                    &format!(
+                        "<span foreground=\"{}\" font_family=\"{}\">{} {}</span>\n",
+                        settings::list_color(),
+                        font_family,
+                        settings::list_character(),
+                        item
+                    ),
                 );
             }
             Ok(gemini::parser::TextElement::MonoText(_text)) => {
@@ -359,16 +361,23 @@ fn draw_gemini_content(
                     true => {
                         buffer.insert_markup(
                             &mut end_iter,
-                            &format!("<span foreground=\"{}\" font_family=\"monospace\">{}</span>\n",
-                                     settings::text_color(),
-                                     text),
+                            &format!(
+                                "<span foreground=\"{}\" font_family=\"monospace\">{}</span>\n",
+                                settings::text_color(),
+                                text
+                            ),
                         );
-                    },
+                    }
                     false => {
-                        buffer.insert_markup(&mut end_iter, &format!("<span foreground=\"{}\" font_family=\"{}\">{}</span>\n",
-                                                                     settings::text_color(),
-                                                                     font_family,
-                                                                     text));
+                        buffer.insert_markup(
+                            &mut end_iter,
+                            &format!(
+                                "<span foreground=\"{}\" font_family=\"{}\">{}</span>\n",
+                                settings::text_color(),
+                                font_family,
+                                text
+                            ),
+                        );
                     }
                 }
             }
@@ -400,7 +409,12 @@ fn draw_gopher_content(
 
                 buffer.insert_markup(
                     &mut end_iter,
-                    &format!("<span foreground=\"{}\" {}>{}</span>\n", settings::text_color(), font_family, text),
+                    &format!(
+                        "<span foreground=\"{}\" {}>{}</span>\n",
+                        settings::text_color(),
+                        font_family,
+                        text
+                    ),
                 );
             }
             Ok(gopher::parser::TextElement::LinkItem(link_item)) => {
@@ -437,7 +451,12 @@ fn draw_finger_content(
 
                 buffer.insert_markup(
                     &mut end_iter,
-                    &format!("<span foreground=\"{}\" {}>{}</span>\n", settings::text_color(), font_family, text),
+                    &format!(
+                        "<span foreground=\"{}\" {}>{}</span>\n",
+                        settings::text_color(),
+                        font_family,
+                        text
+                    ),
                 );
             }
             Err(_) => println!("Something failed."),
@@ -573,7 +592,10 @@ fn insert_gopher_file_button(gui: &Arc<Gui>, url: Url, label: String) {
     button.set_tooltip_text(Some(&url.to_string()));
 
     button.connect_clicked(move |_| {
-        let (_meta, content) = gopher::client::get_data(Gopher {source: url.to_string()}).unwrap();
+        let (_meta, content) = gopher::client::get_data(Gopher {
+            source: url.to_string(),
+        })
+        .unwrap();
         client::download(content);
     });
 

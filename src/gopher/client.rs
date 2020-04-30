@@ -1,4 +1,5 @@
 use percent_encoding::percent_decode;
+use std::thread;
 use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::net::ToSocketAddrs;
@@ -21,7 +22,7 @@ pub fn get_data<T: Protocol>(url: T) -> Result<(Option<Vec<u8>>, Vec<u8>), Strin
 
     match socket {
         Some(socket) => match TcpStream::connect_timeout(&socket, Duration::new(5, 0)) {
-            Ok(mut stream) => {
+            Ok(mut stream) => thread::spawn(move || {
                 let path = url.path().to_string();
 
                 let mut url = match url.query() {
@@ -29,7 +30,8 @@ pub fn get_data<T: Protocol>(url: T) -> Result<(Option<Vec<u8>>, Vec<u8>), Strin
                     None => format!("{}\n", path),
                 };
 
-                let url = if url.starts_with("/0") || url.starts_with("/1") || url.starts_with("/g") {
+                let url = if url.starts_with("/0") || url.starts_with("/1") || url.starts_with("/g")
+                {
                     url.split_off(2)
                 } else if url == "/\n" {
                     String::from("\r\n")
@@ -44,7 +46,9 @@ pub fn get_data<T: Protocol>(url: T) -> Result<(Option<Vec<u8>>, Vec<u8>), Strin
                 stream.read_to_end(&mut res).unwrap();
 
                 Ok((None, res))
-            }
+            })
+            .join()
+            .unwrap(),
             Err(e) => Err(format!("Could not connect to {}\n{}", urlf, e)),
         },
         None => Err(format!("Could not connect to {}\n", urlf)),
