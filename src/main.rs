@@ -8,9 +8,6 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use gtk::prelude::*;
-use gtk::ResponseType;
-
-use url::{Position, Url};
 
 mod gui;
 use gui::Gui;
@@ -19,6 +16,7 @@ use absolute_url::AbsoluteUrl;
 mod bookmarks;
 mod client;
 mod colors;
+mod dialog;
 mod draw;
 mod finger;
 mod gemini;
@@ -146,7 +144,7 @@ fn add_bookmark(gui: &Arc<Gui>) {
     let current_url = url_bar.get_text();
     if let Some(url) = current_url {
         bookmarks::add(&url);
-        info_dialog(&gui, "Bookmark added.");
+        dialog::info(&gui, "Bookmark added.");
     }
 }
 
@@ -207,7 +205,7 @@ pub fn visit_url<T: AbsoluteUrl + Protocol>(gui: &Arc<Gui>, url: T) {
                                     }
                                 }
                                 Status::Gone(_meta) => {
-                                    error_dialog(&gui, "\nSorry page is gone.\n");
+                                    dialog::error(&gui, "\nSorry page is gone.\n");
                                 }
                                 Status::RedirectTemporary(new_url)
                                 | Status::RedirectPermanent(new_url) => {
@@ -215,24 +213,24 @@ pub fn visit_url<T: AbsoluteUrl + Protocol>(gui: &Arc<Gui>, url: T) {
                                 }
                                 Status::TransientCertificateRequired(_meta)
                                 | Status::AuthorisedCertificatedRequired(_meta) => {
-                                    error_dialog(
+                                    dialog::error(
                                         &gui,
                                         "\nYou need a valid certificate to access this page.\n",
                                     );
                                 }
                                 Status::Input(message) => {
-                                    input_dialog(&gui, absolute_url, &message);
+                                    dialog::input(&gui, absolute_url, &message);
                                 }
                                 _ => (),
                             }
                         }
                     }
                     Err(e) => {
-                        error_dialog(&gui, &format!("\n{}\n", e));
+                        dialog::error(&gui, &format!("\n{}\n", e));
                     }
                 },
                 Err(e) => {
-                    error_dialog(&gui, &format!("\n{}\n", e));
+                    dialog::error(&gui, &format!("\n{}\n", e));
                 }
             }
         }
@@ -252,11 +250,11 @@ pub fn visit_url<T: AbsoluteUrl + Protocol>(gui: &Arc<Gui>, url: T) {
                         content_view.show_all();
                     }
                     Err(e) => {
-                        error_dialog(&gui, &format!("\n{}\n", e));
+                        dialog::error(&gui, &format!("\n{}\n", e));
                     }
                 },
                 Err(e) => {
-                    error_dialog(&gui, &format!("\n{}\n", e));
+                    dialog::error(&gui, &format!("\n{}\n", e));
                 }
             }
         }
@@ -276,77 +274,15 @@ pub fn visit_url<T: AbsoluteUrl + Protocol>(gui: &Arc<Gui>, url: T) {
                         content_view.show_all();
                     }
                     Err(e) => {
-                        error_dialog(&gui, &format!("\n{}\n", e));
+                        dialog::error(&gui, &format!("\n{}\n", e));
                     }
                 },
                 Err(e) => {
-                    error_dialog(&gui, &format!("\n{}\n", e));
+                    dialog::error(&gui, &format!("\n{}\n", e));
                 }
             }
         }
     }
-}
-
-fn info_dialog(gui: &Arc<Gui>, message: &str) {
-    let dialog = gtk::Dialog::new_with_buttons(
-        Some("Info"),
-        Some(gui.window()),
-        gtk::DialogFlags::MODAL,
-        &[("Close", ResponseType::Close)],
-    );
-    dialog.set_default_response(ResponseType::Close);
-    dialog.connect_response(|dialog, _| dialog.destroy());
-
-    let content_area = dialog.get_content_area();
-    let message = gtk::Label::new(Some(message));
-    content_area.add(&message);
-
-    dialog.show_all();
-}
-
-fn error_dialog(gui: &Arc<Gui>, message: &str) {
-    let dialog = gtk::Dialog::new_with_buttons(
-        Some("Error"),
-        Some(gui.window()),
-        gtk::DialogFlags::MODAL,
-        &[("Close", ResponseType::Close)],
-    );
-    dialog.set_default_response(ResponseType::Close);
-    dialog.connect_response(|dialog, _| dialog.destroy());
-
-    let content_area = dialog.get_content_area();
-    let message = gtk::Label::new(Some(message));
-    content_area.add(&message);
-
-    dialog.show_all();
-}
-
-fn input_dialog(gui: &Arc<Gui>, url: Url, message: &str) {
-    let dialog = gtk::Dialog::new_with_buttons(
-        Some(message),
-        Some(gui.window()),
-        gtk::DialogFlags::MODAL,
-        &[
-            ("Close", ResponseType::Close),
-            ("Send", ResponseType::Accept),
-        ],
-    );
-
-    let content_area = dialog.get_content_area();
-    let entry = gtk::Entry::new();
-    content_area.add(&entry);
-
-    dialog.show_all();
-
-    if dialog.run() == gtk::ResponseType::Accept {
-        let response = entry.get_text().expect("get_text failed").to_string();
-        let cleaned: &str = &url[..Position::AfterPath];
-        let full_url = format!("{}?{}", cleaned.to_string(), response);
-
-        visit_url(&gui, Gemini { source: full_url });
-    }
-
-    dialog.destroy();
 }
 
 fn clear_buffer(view: &gtk::TextView) {
