@@ -1,6 +1,7 @@
 extern crate gio;
 extern crate glib;
 extern crate gtk;
+extern crate gdk;
 #[macro_use]
 extern crate lazy_static;
 

@@ -1,6 +1,8 @@
 use gtk::prelude::*;
 use gtk::{ApplicationWindow, Button, Entry, TextView};
 
+use gdk::WindowExt;
+
 
 pub struct Gui {
     window: ApplicationWindow,
@@ -39,6 +41,11 @@ impl Gui {
         glib::set_application_name("Castor Browser");
         self.window.set_role("Castor Browser");
         self.window.connect_delete_event(|_, _| { gtk::main_quit(); Inhibit(false) });
+        self.content_view.connect_motion_notify_event(|win, _| {
+            let w = gtk::TextViewExt::get_window(win, gtk::TextWindowType::Text).unwrap();
+            w.set_cursor(gdk::Cursor::new_from_name(&w.get_display(), "default").as_ref());
+            Inhibit(false)
+        });
         self.window.show_all();
     }
 
