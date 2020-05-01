@@ -7,9 +7,8 @@ extern crate lazy_static;
 use std::str::FromStr;
 use std::sync::Arc;
 
-use glib::clone;
 use gtk::prelude::*;
-use gtk::{ResponseType, TextBuffer};
+use gtk::ResponseType;
 
 use url::{Position, Url};
 
@@ -20,12 +19,11 @@ use absolute_url::AbsoluteUrl;
 mod bookmarks;
 mod client;
 mod colors;
+mod draw;
 mod finger;
 mod gemini;
 mod gopher;
 mod history;
-use gemini::link::Link as GeminiLink;
-use gopher::link::Link as GopherLink;
 mod protocols;
 use protocols::{Finger, Gemini, Gopher, Protocol, Scheme};
 mod settings;
@@ -159,14 +157,14 @@ fn show_bookmarks(gui: &Arc<Gui>) {
     let parsed_content = gemini::parser::parse(bookmarks_list);
 
     clear_buffer(&content_view);
-    draw_gemini_content(&gui, parsed_content);
+    draw::gemini_content(&gui, parsed_content);
 
     update_url_field(&gui, "::bookmarks");
 
     content_view.show_all();
 }
 
-fn visit_url<T: AbsoluteUrl + Protocol>(gui: &Arc<Gui>, url: T) {
+pub fn visit_url<T: AbsoluteUrl + Protocol>(gui: &Arc<Gui>, url: T) {
     if url.get_source_str() == "gemini://::bookmarks" {
         show_bookmarks(&gui);
         return;
@@ -196,10 +194,10 @@ fn visit_url<T: AbsoluteUrl + Protocol>(gui: &Arc<Gui>, url: T) {
                                         let parsed_content = gemini::parser::parse(content_str);
                                         clear_buffer(&content_view);
                                         if meta == "text/gemini" {
-                                            draw_gemini_content(&gui, parsed_content);
+                                            draw::gemini_content(&gui, parsed_content);
                                         } else {
                                             // just a text file
-                                            draw_gemini_text_content(&gui, parsed_content);
+                                            draw::gemini_text_content(&gui, parsed_content);
                                         }
 
                                         content_view.show_all();
@@ -249,7 +247,7 @@ fn visit_url<T: AbsoluteUrl + Protocol>(gui: &Arc<Gui>, url: T) {
 
                         let parsed_content = gopher::parser::parse(content_str);
                         clear_buffer(&content_view);
-                        draw_gopher_content(&gui, parsed_content);
+                        draw::gopher_content(&gui, parsed_content);
 
                         content_view.show_all();
                     }
@@ -273,7 +271,7 @@ fn visit_url<T: AbsoluteUrl + Protocol>(gui: &Arc<Gui>, url: T) {
 
                         let parsed_content = finger::parser::parse(content_str);
                         clear_buffer(&content_view);
-                        draw_finger_content(&gui, parsed_content);
+                        draw::finger_content(&gui, parsed_content);
 
                         content_view.show_all();
                     }
@@ -287,373 +285,6 @@ fn visit_url<T: AbsoluteUrl + Protocol>(gui: &Arc<Gui>, url: T) {
             }
         }
     }
-}
-
-fn draw_gemini_content(
-    gui: &Arc<Gui>,
-    content: Vec<Result<gemini::parser::TextElement, gemini::parser::ParseError>>,
-) -> TextBuffer {
-    let content_view = gui.content_view();
-    let buffer = content_view.get_buffer().unwrap();
-
-    let mut mono_toggle = false;
-    let font_family = if settings::gemini_monospace() {
-        "monospace"
-    } else {
-        "sans"
-    };
-
-    for el in content {
-        match el {
-            Ok(gemini::parser::TextElement::H1(header)) => {
-                let mut end_iter = buffer.get_end_iter();
-                buffer.insert_markup(
-                    &mut end_iter,
-                    &format!(
-                        "<span foreground=\"{}\" size=\"x-large\" font_family=\"{}\">{}{}</span>\n",
-                        settings::h1_color(),
-                        font_family,
-                        settings::h1_character(),
-                        header
-                    ),
-                );
-            }
-            Ok(gemini::parser::TextElement::H2(header)) => {
-                let mut end_iter = buffer.get_end_iter();
-                buffer.insert_markup(
-                    &mut end_iter,
-                    &format!(
-                        "<span foreground=\"{}\" size=\"large\" font_family=\"{}\">{}{}</span>\n",
-                        settings::h2_color(),
-                        font_family,
-                        settings::h2_character(),
-                        header
-                    ),
-                );
-            }
-            Ok(gemini::parser::TextElement::H3(header)) => {
-                let mut end_iter = buffer.get_end_iter();
-                buffer.insert_markup(
-                    &mut end_iter,
-                    &format!(
-                        "<span foreground=\"{}\" size=\"medium\" font_family=\"{}\">{}{}</span>\n",
-                        settings::h3_color(),
-                        font_family,
-                        settings::h3_character(),
-                        header
-                    ),
-                );
-            }
-            Ok(gemini::parser::TextElement::ListItem(item)) => {
-                let mut end_iter = buffer.get_end_iter();
-                buffer.insert_markup(
-                    &mut end_iter,
-                    &format!(
-                        "<span foreground=\"{}\" font_family=\"{}\">{} {}</span>\n",
-                        settings::list_color(),
-                        font_family,
-                        settings::list_character(),
-                        item
-                    ),
-                );
-            }
-            Ok(gemini::parser::TextElement::MonoText(_text)) => {
-                mono_toggle = !mono_toggle;
-            }
-            Ok(gemini::parser::TextElement::Text(text)) => {
-                let mut end_iter = buffer.get_end_iter();
-                match mono_toggle {
-                    true => {
-                        buffer.insert_markup(
-                            &mut end_iter,
-                            &format!(
-                                "<span foreground=\"{}\" font_family=\"monospace\">{}</span>\n",
-                                settings::text_color(),
-                                text
-                            ),
-                        );
-                    }
-                    false => {
-                        buffer.insert_markup(
-                            &mut end_iter,
-                            &format!(
-                                "<span foreground=\"{}\" font_family=\"{}\">{}</span>\n",
-                                settings::text_color(),
-                                font_family,
-                                text
-                            ),
-                        );
-                    }
-                }
-            }
-            Ok(gemini::parser::TextElement::LinkItem(link_item)) => {
-                draw_gemini_link(&gui, link_item);
-            }
-            Err(_) => println!("Something failed."),
-        }
-    }
-    buffer
-}
-
-fn draw_gemini_text_content(
-    gui: &Arc<Gui>,
-    content: Vec<Result<gemini::parser::TextElement, gemini::parser::ParseError>>,
-) -> TextBuffer {
-    let content_view = gui.content_view();
-    let buffer = content_view.get_buffer().unwrap();
-
-    for el in content {
-        match el {
-            Ok(gemini::parser::TextElement::Text(text)) => {
-                let mut end_iter = buffer.get_end_iter();
-                buffer.insert_markup(
-                    &mut end_iter,
-                    &format!(
-                        "<span foreground=\"{}\" font_family=\"monospace\">{}</span>\n",
-                        settings::text_color(),
-                        text
-                    ),
-                );
-            },
-            Ok(_) => (),
-            Err(_) => println!("Something failed."),
-        }
-    }
-    buffer
-}
-
-fn draw_gopher_content(
-    gui: &Arc<Gui>,
-    content: Vec<Result<gopher::parser::TextElement, gopher::parser::ParseError>>,
-) -> TextBuffer {
-    let content_view = gui.content_view();
-    let buffer = content_view.get_buffer().unwrap();
-
-    for el in content {
-        match el {
-            Ok(gopher::parser::TextElement::Text(text)) => {
-                let mut end_iter = buffer.get_end_iter();
-                let font_family = if settings::gopher_monospace() {
-                    "font_family=\"monospace\""
-                } else {
-                    "font_family=\"serif\""
-                };
-
-                buffer.insert_markup(
-                    &mut end_iter,
-                    &format!(
-                        "<span foreground=\"{}\" {}>{}</span>\n",
-                        settings::text_color(),
-                        font_family,
-                        text
-                    ),
-                );
-            }
-            Ok(gopher::parser::TextElement::LinkItem(link_item)) => {
-                draw_gopher_link(&gui, link_item);
-            }
-            Ok(gopher::parser::TextElement::ExternalLinkItem(link_item)) => {
-                draw_gopher_link(&gui, link_item);
-            }
-            Ok(gopher::parser::TextElement::Image(link_item)) => {
-                draw_gopher_link(&gui, link_item);
-            }
-            Err(_) => println!("Something failed."),
-        }
-    }
-    buffer
-}
-
-fn draw_finger_content(
-    gui: &Arc<Gui>,
-    content: Vec<Result<finger::parser::TextElement, finger::parser::ParseError>>,
-) -> TextBuffer {
-    let content_view = gui.content_view();
-    let buffer = content_view.get_buffer().unwrap();
-
-    for el in content {
-        match el {
-            Ok(finger::parser::TextElement::Text(text)) => {
-                let mut end_iter = buffer.get_end_iter();
-                let font_family = if settings::finger_monospace() {
-                    "font_family=\"monospace\""
-                } else {
-                    "font_family=\"serif\""
-                };
-
-                buffer.insert_markup(
-                    &mut end_iter,
-                    &format!(
-                        "<span foreground=\"{}\" {}>{}</span>\n",
-                        settings::text_color(),
-                        font_family,
-                        text
-                    ),
-                );
-            }
-            Err(_) => println!("Something failed."),
-        }
-    }
-    buffer
-}
-
-fn draw_gemini_link(gui: &Arc<Gui>, link_item: String) {
-    match GeminiLink::from_str(&link_item) {
-        Ok(GeminiLink::Finger(url, label)) => {
-            let button_label = if label.is_empty() {
-                url.clone().to_string()
-            } else {
-                label
-            };
-            let finger_label = format!("{} [Finger]", button_label);
-            insert_button(&gui, url, finger_label);
-        }
-        Ok(GeminiLink::Gemini(url, label)) => {
-            insert_button(&gui, url, label);
-        }
-        Ok(GeminiLink::Gopher(url, label)) => {
-            let button_label = if label.is_empty() {
-                url.clone().to_string()
-            } else {
-                label
-            };
-            let gopher_label = format!("{} [Gopher]", button_label);
-            insert_button(&gui, url, gopher_label);
-        }
-        Ok(GeminiLink::Http(url, label)) => {
-            let button_label = if label.is_empty() {
-                url.clone().to_string()
-            } else {
-                label
-            };
-            let www_label = format!("{} [WWW]", button_label);
-
-            insert_external_button(&gui, url, &www_label);
-        }
-        Ok(GeminiLink::Relative(url, label)) => {
-            let new_url = Gemini { source: url }.to_absolute_url().unwrap();
-            insert_button(&gui, new_url, label);
-        }
-        Ok(GeminiLink::Unknown(_, _)) => (),
-        Err(_) => (),
-    }
-}
-
-fn draw_gopher_link(gui: &Arc<Gui>, link_item: String) {
-    match GopherLink::from_str(&link_item) {
-        Ok(GopherLink::Http(url, label)) => {
-            let button_label = if label.is_empty() {
-                url.clone().to_string()
-            } else {
-                label
-            };
-            let www_label = format!("{} [WWW]", button_label);
-
-            insert_external_button(&gui, url, &www_label);
-        }
-        Ok(GopherLink::Gopher(url, label)) => {
-            let button_label = if label.is_empty() {
-                url.clone().to_string()
-            } else {
-                label
-            };
-            let gopher_label = format!("{} [Gopher]", button_label);
-            insert_button(&gui, url, gopher_label);
-        }
-        Ok(GopherLink::Image(url, label)) => {
-            let button_label = if label.is_empty() {
-                url.clone().to_string()
-            } else {
-                label
-            };
-            let image_label = format!("{} [Image]", button_label);
-            insert_gopher_file_button(&gui, url, image_label);
-        }
-        Ok(GopherLink::Gemini(url, label)) => {
-            insert_button(&gui, url, label);
-        }
-        Ok(GopherLink::Relative(url, label)) => {
-            let new_url = Gopher { source: url }.to_absolute_url().unwrap();
-            insert_button(&gui, new_url, label);
-        }
-        Ok(GopherLink::Unknown(_, _)) => (),
-        Err(_) => (),
-    }
-}
-
-fn insert_button(gui: &Arc<Gui>, url: Url, label: String) {
-    let content_view = gui.content_view();
-    let buffer = content_view.get_buffer().unwrap();
-
-    let button_label = if label.is_empty() {
-        url.clone().to_string()
-    } else {
-        label
-    };
-
-    let button = gtk::Button::new_with_label(&button_label);
-    button.set_tooltip_text(Some(&url.to_string()));
-
-    button.connect_clicked(clone!(@weak gui => move |_| {
-        match url.scheme() {
-            "finger" => visit_url(&gui, Finger { source: url.to_string() }),
-            "gemini" => visit_url(&gui, Gemini { source: url.to_string() }),
-            "gopher" => visit_url(&gui, Gopher { source: url.to_string() }),
-            _ => ()
-        }
-    }));
-
-    let mut start_iter = buffer.get_end_iter();
-    let anchor = buffer.create_child_anchor(&mut start_iter).unwrap();
-    content_view.add_child_at_anchor(&button, &anchor);
-    let mut end_iter = buffer.get_end_iter();
-    buffer.insert(&mut end_iter, "\n");
-}
-
-fn insert_gopher_file_button(gui: &Arc<Gui>, url: Url, label: String) {
-    let content_view = gui.content_view();
-    let buffer = content_view.get_buffer().unwrap();
-
-    let button_label = if label.is_empty() {
-        url.clone().to_string()
-    } else {
-        label
-    };
-
-    let button = gtk::Button::new_with_label(&button_label);
-    button.set_tooltip_text(Some(&url.to_string()));
-
-    button.connect_clicked(move |_| {
-        let (_meta, content) = gopher::client::get_data(Gopher {
-            source: url.to_string(),
-        })
-        .unwrap();
-        client::download(content);
-    });
-
-    let mut start_iter = buffer.get_end_iter();
-    let anchor = buffer.create_child_anchor(&mut start_iter).unwrap();
-    content_view.add_child_at_anchor(&button, &anchor);
-    let mut end_iter = buffer.get_end_iter();
-    buffer.insert(&mut end_iter, "\n");
-}
-
-fn insert_external_button(gui: &Arc<Gui>, url: Url, label: &str) {
-    let content_view = gui.content_view();
-    let buffer = content_view.get_buffer().unwrap();
-
-    let button = gtk::Button::new_with_label(&label);
-    button.set_tooltip_text(Some(&url.to_string()));
-
-    button.connect_clicked(move |_| {
-        open::that(url.to_string()).unwrap();
-    });
-
-    let mut start_iter = buffer.get_end_iter();
-    let anchor = buffer.create_child_anchor(&mut start_iter).unwrap();
-    content_view.add_child_at_anchor(&button, &anchor);
-    let mut end_iter = buffer.get_end_iter();
-    buffer.insert(&mut end_iter, "\n");
 }
 
 fn info_dialog(gui: &Arc<Gui>, message: &str) {
