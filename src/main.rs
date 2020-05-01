@@ -195,7 +195,12 @@ fn visit_url<T: AbsoluteUrl + Protocol>(gui: &Arc<Gui>, url: T) {
 
                                         let parsed_content = gemini::parser::parse(content_str);
                                         clear_buffer(&content_view);
-                                        draw_gemini_content(&gui, parsed_content);
+                                        if meta == "text/gemini" {
+                                            draw_gemini_content(&gui, parsed_content);
+                                        } else {
+                                            // just a text file
+                                            draw_gemini_text_content(&gui, parsed_content);
+                                        }
 
                                         content_view.show_all();
                                     } else {
@@ -384,6 +389,33 @@ fn draw_gemini_content(
             Ok(gemini::parser::TextElement::LinkItem(link_item)) => {
                 draw_gemini_link(&gui, link_item);
             }
+            Err(_) => println!("Something failed."),
+        }
+    }
+    buffer
+}
+
+fn draw_gemini_text_content(
+    gui: &Arc<Gui>,
+    content: Vec<Result<gemini::parser::TextElement, gemini::parser::ParseError>>,
+) -> TextBuffer {
+    let content_view = gui.content_view();
+    let buffer = content_view.get_buffer().unwrap();
+
+    for el in content {
+        match el {
+            Ok(gemini::parser::TextElement::Text(text)) => {
+                let mut end_iter = buffer.get_end_iter();
+                buffer.insert_markup(
+                    &mut end_iter,
+                    &format!(
+                        "<span foreground=\"{}\" font_family=\"monospace\">{}</span>\n",
+                        settings::text_color(),
+                        text
+                    ),
+                );
+            },
+            Ok(_) => (),
             Err(_) => println!("Something failed."),
         }
     }
