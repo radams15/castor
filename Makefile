@@ -50,7 +50,7 @@ uninstall :
 	rm -f $(sharedir)/icons/hicolor/scalable/apps/org.typed-hole.castor.svg
 	rm -f $(sharedir)/icons/hicolor/*x*/apps/org.typed-hole.castor.png
 	# Remove the binary
-	rm -f $(bindir)/bin/castor
+	rm -f $(bindir)/castor
 
 clean :
 	cargo clean
