@@ -26,8 +26,8 @@ pub fn get_data<T: Protocol>(url: T) -> Result<(Option<Vec<u8>>, Vec<u8>), Strin
                 let path = url.path().to_string();
 
                 let mut url = match url.query() {
-                    Some(query) => format!("{}?{}\n", path, query),
-                    None => format!("{}\n", path),
+                    Some(query) => format!("{}?{}\r\n", path, query),
+                    None => format!("{}\r\n", path),
                 };
 
                 let url = if url.starts_with("/0") || url.starts_with("/1") || url.starts_with("/g")
