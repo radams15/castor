@@ -1,6 +1,6 @@
 use glib::clone;
-use gtk::TextBuffer;
 use gtk::prelude::*;
+use gtk::TextBuffer;
 use std::str::FromStr;
 use std::sync::Arc;
 use url::Url;
@@ -10,7 +10,6 @@ use crate::gemini::link::Link as GeminiLink;
 use crate::gopher::link::Link as GopherLink;
 use crate::gui::Gui;
 use crate::protocols::{Finger, Gemini, Gopher};
-
 
 pub fn gemini_content(
     gui: &Arc<Gui>,
@@ -85,28 +84,25 @@ pub fn gemini_content(
             }
             Ok(crate::gemini::parser::TextElement::Text(text)) => {
                 let mut end_iter = buffer.get_end_iter();
-                match mono_toggle {
-                    true => {
-                        buffer.insert_markup(
-                            &mut end_iter,
-                            &format!(
-                                "<span foreground=\"{}\" font_family=\"monospace\">{}</span>\n",
-                                crate::settings::text_color(),
-                                text
-                            ),
-                        );
-                    }
-                    false => {
-                        buffer.insert_markup(
-                            &mut end_iter,
-                            &format!(
-                                "<span foreground=\"{}\" font_family=\"{}\">{}</span>\n",
-                                crate::settings::text_color(),
-                                font_family,
-                                text
-                            ),
-                        );
-                    }
+                if mono_toggle {
+                    buffer.insert_markup(
+                        &mut end_iter,
+                        &format!(
+                            "<span foreground=\"{}\" font_family=\"monospace\">{}</span>\n",
+                            crate::settings::text_color(),
+                            text
+                        ),
+                    );
+                } else {
+                    buffer.insert_markup(
+                        &mut end_iter,
+                        &format!(
+                            "<span foreground=\"{}\" font_family=\"{}\">{}</span>\n",
+                            crate::settings::text_color(),
+                            font_family,
+                            text
+                        ),
+                    );
                 }
             }
             Ok(crate::gemini::parser::TextElement::LinkItem(link_item)) => {
@@ -137,7 +133,7 @@ pub fn gemini_text_content(
                         text
                     ),
                 );
-            },
+            }
             Ok(_) => (),
             Err(_) => println!("Something failed."),
         }

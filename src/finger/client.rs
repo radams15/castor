@@ -19,7 +19,7 @@ pub fn get_data<T: Protocol>(url: T) -> Result<(Option<Vec<u8>>, Vec<u8>), Strin
         Some(socket) => match TcpStream::connect_timeout(&socket, Duration::new(5, 0)) {
             Ok(mut stream) => thread::spawn(move || {
                 let username = if url.username() == "" {
-                    url.path().replace("/","")
+                    url.path().replace("/", "")
                 } else {
                     String::from(url.username())
                 };

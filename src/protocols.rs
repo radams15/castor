@@ -6,9 +6,15 @@ pub trait Protocol {
     fn get_scheme(&self) -> Scheme;
 }
 
-pub struct Gemini { pub source: String }
-pub struct Gopher { pub source: String }
-pub struct Finger { pub source: String }
+pub struct Gemini {
+    pub source: String,
+}
+pub struct Gopher {
+    pub source: String,
+}
+pub struct Finger {
+    pub source: String,
+}
 
 impl Protocol for Finger {
     fn get_source_str(&self) -> &str {
@@ -56,5 +62,5 @@ impl Protocol for Gopher {
 pub enum Scheme {
     Finger,
     Gemini,
-    Gopher
+    Gopher,
 }

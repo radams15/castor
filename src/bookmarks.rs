@@ -5,7 +5,6 @@ use std::fs::File;
 use std::fs::OpenOptions;
 use std::io::{Read, Write};
 
-
 pub fn add(url: &str) {
     let mut file = bookmarks_file();
     let entry = format!("=> {}\n", url);

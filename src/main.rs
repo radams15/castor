@@ -1,10 +1,11 @@
+extern crate gdk;
 extern crate gio;
 extern crate glib;
 extern crate gtk;
-extern crate gdk;
 #[macro_use]
 extern crate lazy_static;
 
+use std::env;
 use std::str::FromStr;
 use std::sync::Arc;
 
@@ -36,19 +37,18 @@ fn main() {
     // Create the main window.
     let gui = Arc::new(Gui::new());
 
-    // Set background color+
-    match settings::background_color() {
-        Some(color) => {
-            let provider = gtk::CssProvider::new();
-            provider.load_from_data(format!("textview text {{ background-color: {}; }}", color).as_bytes()).expect("Failed to load CSS");
+    // Set background color
+    if let Some(color) = settings::background_color() {
+        let provider = gtk::CssProvider::new();
+        provider
+            .load_from_data(format!("textview text {{ background-color: {}; }}", color).as_bytes())
+            .expect("Failed to load CSS");
 
-            gtk::StyleContext::add_provider_for_screen(
-                &gdk::Screen::get_default().expect("Error initializing gtk css provider."),
-                &provider,
-                gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
-            );
-        }
-        None => (),
+        gtk::StyleContext::add_provider_for_screen(
+            &gdk::Screen::get_default().expect("Error initializing gtk css provider."),
+            &provider,
+            gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+        );
     }
 
     // Bind back button

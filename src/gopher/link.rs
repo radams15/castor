@@ -34,7 +34,10 @@ impl FromStr for Link {
 
                     if let Some(port) = port {
                         if path != "" {
-                            match Url::parse(&format!("gopher://{}:{}/{}{}", host, port, selector, path)) {
+                            match Url::parse(&format!(
+                                "gopher://{}:{}/{}{}",
+                                host, port, selector, path
+                            )) {
                                 Ok(url) => Ok(Link::Gopher(url, text)),
                                 Err(e) => {
                                     println!("ERR {:?}", e);
@@ -77,13 +80,16 @@ impl FromStr for Link {
                     };
 
                     if let Some(port) = port {
-                      match Url::parse(&format!("gopher://{}:{}/{}{}", host, port, selector, path)) {
-                          Ok(url) => Ok(Link::Image(url, text)),
-                          Err(e) => {
-                              println!("ERR {:?}", e);
-                              Err(ParseError)
-                          }
-                      }
+                        match Url::parse(&format!(
+                            "gopher://{}:{}/{}{}",
+                            host, port, selector, path
+                        )) {
+                            Ok(url) => Ok(Link::Image(url, text)),
+                            Err(e) => {
+                                println!("ERR {:?}", e);
+                                Err(ParseError)
+                            }
+                        }
                     } else {
                         Err(ParseError)
                     }

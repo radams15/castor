@@ -15,13 +15,10 @@ pub fn get_data<T: Protocol>(url: T) -> Result<(Option<Vec<u8>>, Vec<u8>), Strin
     builder.danger_accept_invalid_hostnames(true);
     builder.danger_accept_invalid_certs(true);
 
-    match crate::gemini::certificate::get_certificate(host) {
-        Some(cert) => {
-            let der = cert.to_der().unwrap();
-            let identity = native_tls::Identity::from_pkcs12(&der, "").unwrap();
-            builder.identity(identity);
-        }
-        None => (),
+    if let Some(cert) = crate::gemini::certificate::get_certificate(host) {
+        let der = cert.to_der().unwrap();
+        let identity = native_tls::Identity::from_pkcs12(&der, "").unwrap();
+        builder.identity(identity);
     };
 
     let connector = builder.build().unwrap();

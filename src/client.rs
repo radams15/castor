@@ -1,6 +1,5 @@
-use std::io::{Write};
+use std::io::Write;
 use tempfile::NamedTempFile;
-
 
 pub trait Client {
     fn get_data(&self) -> Result<(Option<Vec<u8>>, Vec<u8>), String>;

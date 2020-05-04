@@ -48,7 +48,7 @@ struct Monospace {
 pub fn start_url() -> Option<String> {
     match read().general {
         Some(general) => general.start_url,
-        None => None
+        None => None,
     }
 }
 
@@ -56,9 +56,9 @@ pub fn h1_color() -> String {
     match read().colors {
         Some(colors) => match colors.h1 {
             Some(color) => color,
-            None => String::from("#9932CC")
+            None => String::from("#9932CC"),
         },
-        None => String::from("#9932CC")
+        None => String::from("#9932CC"),
     }
 }
 
@@ -66,9 +66,9 @@ pub fn h2_color() -> String {
     match read().colors {
         Some(colors) => match colors.h2 {
             Some(color) => color,
-            None => String::from("#FF1493")
+            None => String::from("#FF1493"),
         },
-        None => String::from("#FF1493")
+        None => String::from("#FF1493"),
     }
 }
 
@@ -76,9 +76,9 @@ pub fn h3_color() -> String {
     match read().colors {
         Some(colors) => match colors.h3 {
             Some(color) => color,
-            None => String::from("#87CEFA")
+            None => String::from("#87CEFA"),
         },
-        None => String::from("#87CEFA")
+        None => String::from("#87CEFA"),
     }
 }
 
@@ -86,9 +86,9 @@ pub fn list_color() -> String {
     match read().colors {
         Some(colors) => match colors.list {
             Some(color) => color,
-            None => String::from("green")
-        }
-        None => String::from("green")
+            None => String::from("green"),
+        },
+        None => String::from("green"),
     }
 }
 
@@ -96,16 +96,16 @@ pub fn text_color() -> String {
     match read().colors {
         Some(colors) => match colors.text {
             Some(color) => color,
-            None => String::from("black")
-        }
-        None => String::from("black")
+            None => String::from("black"),
+        },
+        None => String::from("black"),
     }
 }
 
 pub fn background_color() -> Option<String> {
     match read().colors {
         Some(colors) => colors.background,
-        None => None
+        None => None,
     }
 }
 
@@ -113,9 +113,9 @@ pub fn h1_character() -> String {
     match read().characters {
         Some(characters) => match characters.h1 {
             Some(character) => character,
-            None => String::new()
-        }
-        None => String::new()
+            None => String::new(),
+        },
+        None => String::new(),
     }
 }
 
@@ -123,9 +123,9 @@ pub fn h2_character() -> String {
     match read().characters {
         Some(characters) => match characters.h2 {
             Some(character) => character,
-            None => String::new()
-        }
-        None => String::new()
+            None => String::new(),
+        },
+        None => String::new(),
     }
 }
 
@@ -133,9 +133,9 @@ pub fn h3_character() -> String {
     match read().characters {
         Some(characters) => match characters.h3 {
             Some(character) => character,
-            None => String::new()
-        }
-        None => String::new()
+            None => String::new(),
+        },
+        None => String::new(),
     }
 }
 
@@ -143,9 +143,9 @@ pub fn list_character() -> String {
     match read().characters {
         Some(characters) => match characters.list {
             Some(character) => character,
-            None => String::from("■")
-        }
-        None => String::from("■")
+            None => String::from("■"),
+        },
+        None => String::from("■"),
     }
 }
 
@@ -153,9 +153,9 @@ pub fn finger_monospace() -> bool {
     match read().monospace {
         Some(monospace) => match monospace.finger {
             Some(setting) => setting,
-            None => true
-        }
-        None => true
+            None => true,
+        },
+        None => true,
     }
 }
 
@@ -163,9 +163,9 @@ pub fn gemini_monospace() -> bool {
     match read().monospace {
         Some(monospace) => match monospace.gemini {
             Some(setting) => setting,
-            None => true
-        }
-        None => true
+            None => true,
+        },
+        None => true,
     }
 }
 
@@ -173,9 +173,9 @@ pub fn gopher_monospace() -> bool {
     match read().monospace {
         Some(monospace) => match monospace.gopher {
             Some(setting) => setting,
-            None => true
-        }
-        None => true
+            None => true,
+        },
+        None => true,
     }
 }
 

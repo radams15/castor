@@ -1,6 +1,6 @@
 use gtk::prelude::*;
-use std::sync::Arc;
 use gtk::ResponseType;
+use std::sync::Arc;
 
 use url::{Position, Url};
 

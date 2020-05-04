@@ -1,8 +1,8 @@
 use percent_encoding::percent_decode;
-use std::thread;
 use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::net::ToSocketAddrs;
+use std::thread;
 use std::time::Duration;
 
 use crate::Protocol;

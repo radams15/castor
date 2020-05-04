@@ -31,7 +31,7 @@ pub fn get_current_url() -> Option<String> {
                 Err(_) => None,
             }
         }
-        None => None
+        None => None,
     }
 }
 

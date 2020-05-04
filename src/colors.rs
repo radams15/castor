@@ -24,7 +24,10 @@ pub mod colors {
                         s.push_str("");
                     } else {
                         let color = colors.last().unwrap();
-                        s.push_str(&format!("<span foreground={:?}>", ansi_color_to_hex(*color)))
+                        s.push_str(&format!(
+                            "<span foreground={:?}>",
+                            ansi_color_to_hex(*color)
+                        ))
                     }
                 }
                 Output::TextBlock(text) => {
