@@ -88,10 +88,17 @@ fn main() {
         });
     }
 
-    // Visit start URL setting if provided
-    match settings::start_url() {
-        Some(url) => route_url(&gui, url),
-        None => (),
+    // Use passed URL or settings start_url
+    let args: Vec<String> = env::args().collect();
+    match args.len() {
+        // no argument passed, check settings
+        1 => {
+            if let Some(url) = settings::start_url() {
+                route_url(&gui, url)
+            }
+        }
+        // Use argument as initial URL
+        _ => route_url(&gui, args[1].to_string()),
     }
 
     gui.start();
