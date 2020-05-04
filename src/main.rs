@@ -35,11 +35,18 @@ fn main() {
 
     // Create the main window.
     let gui = Arc::new(Gui::new());
+
+    // Set background color+
     match settings::background_color() {
         Some(color) => {
-            let content_view = gui.content_view();
-            let color = gdk::RGBA::from_str(&color).unwrap();
-            content_view.override_background_color(gtk::StateFlags::NORMAL, Some(&color));
+            let provider = gtk::CssProvider::new();
+            provider.load_from_data(format!("textview text {{ background-color: {}; }}", color).as_bytes()).expect("Failed to load CSS");
+
+            gtk::StyleContext::add_provider_for_screen(
+                &gdk::Screen::get_default().expect("Error initializing gtk css provider."),
+                &provider,
+                gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+            );
         }
         None => (),
     }
