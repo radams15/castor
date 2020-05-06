@@ -54,7 +54,6 @@
                 <property name="image">image3</property>
                 <property name="always_show_image">True</property>
                 <accelerator key="Left" signal="clicked" modifiers="GDK_MOD1_MASK"/>
-                <accelerator key="BackSpace" signal="clicked"/>
               </object>
               <packing>
                 <property name="expand">False</property>
