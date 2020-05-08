@@ -36,7 +36,7 @@ pub fn gemini_content(
                         crate::settings::h1_color(),
                         font_family,
                         crate::settings::h1_character(),
-                        header
+                        escape_text(&header)
                     ),
                 );
             }
@@ -49,7 +49,7 @@ pub fn gemini_content(
                         crate::settings::h2_color(),
                         font_family,
                         crate::settings::h2_character(),
-                        header
+                        escape_text(&header)
                     ),
                 );
             }
@@ -62,7 +62,7 @@ pub fn gemini_content(
                         crate::settings::h3_color(),
                         font_family,
                         crate::settings::h3_character(),
-                        header
+                        escape_text(&header)
                     ),
                 );
             }
@@ -75,7 +75,7 @@ pub fn gemini_content(
                         crate::settings::list_color(),
                         font_family,
                         crate::settings::list_character(),
-                        item
+                        escape_text(&item)
                     ),
                 );
             }
@@ -84,6 +84,12 @@ pub fn gemini_content(
             }
             Ok(crate::gemini::parser::TextElement::Text(text)) => {
                 let mut end_iter = buffer.get_end_iter();
+                let text = if text.contains("<span") {
+                    text
+                } else {
+                    escape_text(&text)
+                };
+
                 if mono_toggle {
                     buffer.insert_markup(
                         &mut end_iter,
@@ -130,7 +136,7 @@ pub fn gemini_text_content(
                     &format!(
                         "<span foreground=\"{}\" font_family=\"monospace\">{}</span>\n",
                         crate::settings::text_color(),
-                        text
+                        escape_text(&text)
                     ),
                 );
             }
@@ -164,7 +170,7 @@ pub fn gopher_content(
                         "<span foreground=\"{}\" {}>{}</span>\n",
                         crate::settings::text_color(),
                         font_family,
-                        text
+                        escape_text(&text)
                     ),
                 );
             }
@@ -206,7 +212,7 @@ pub fn finger_content(
                         "<span foreground=\"{}\" {}>{}</span>\n",
                         crate::settings::text_color(),
                         font_family,
-                        text
+                        escape_text(&text)
                     ),
                 );
             }
@@ -373,4 +379,8 @@ pub fn insert_external_button(gui: &Arc<Gui>, url: Url, label: &str) {
     content_view.add_child_at_anchor(&button, &anchor);
     let mut end_iter = buffer.get_end_iter();
     buffer.insert(&mut end_iter, "\n");
+}
+
+fn escape_text(str: &str) -> String {
+    String::from(glib::markup_escape_text(&str).as_str())
 }
