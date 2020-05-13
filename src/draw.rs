@@ -120,29 +120,20 @@ pub fn gemini_content(
     buffer
 }
 
-pub fn gemini_text_content(
-    gui: &Arc<Gui>,
-    content: Vec<Result<crate::gemini::parser::TextElement, crate::gemini::parser::ParseError>>,
-) -> TextBuffer {
+pub fn gemini_text_content(gui: &Arc<Gui>, content: std::str::Lines) -> TextBuffer {
     let content_view = gui.content_view();
     let buffer = content_view.get_buffer().unwrap();
 
-    for el in content {
-        match el {
-            Ok(crate::gemini::parser::TextElement::Text(text)) => {
-                let mut end_iter = buffer.get_end_iter();
-                buffer.insert_markup(
-                    &mut end_iter,
-                    &format!(
-                        "<span foreground=\"{}\" font_family=\"monospace\">{}</span>\n",
-                        crate::settings::text_color(),
-                        escape_text(&text)
-                    ),
-                );
-            }
-            Ok(_) => (),
-            Err(_) => println!("Something failed."),
-        }
+    for line in content {
+        let mut end_iter = buffer.get_end_iter();
+        buffer.insert_markup(
+            &mut end_iter,
+            &format!(
+                "<span foreground=\"{}\" font_family=\"monospace\">{}</span>\n",
+                crate::settings::text_color(),
+                escape_text(&line)
+            ),
+        );
     }
     buffer
 }
@@ -164,13 +155,19 @@ pub fn gopher_content(
                     "font_family=\"serif\""
                 };
 
+                let text = if text.contains("<span") {
+                    text
+                } else {
+                    escape_text(&text)
+                };
+
                 buffer.insert_markup(
                     &mut end_iter,
                     &format!(
                         "<span foreground=\"{}\" {}>{}</span>\n",
                         crate::settings::text_color(),
                         font_family,
-                        escape_text(&text)
+                        text
                     ),
                 );
             }

@@ -204,13 +204,13 @@ pub fn visit_url<T: AbsoluteUrl + Protocol>(gui: &Arc<Gui>, url: T) {
                                         let content_str =
                                             String::from_utf8_lossy(&new_content).to_string();
 
-                                        let parsed_content = gemini::parser::parse(content_str);
                                         clear_buffer(&content_view);
                                         if meta == "text/gemini" {
+                                            let parsed_content = gemini::parser::parse(content_str);
                                             draw::gemini_content(&gui, parsed_content);
                                         } else {
                                             // just a text file
-                                            draw::gemini_text_content(&gui, parsed_content);
+                                            draw::gemini_text_content(&gui, content_str.lines());
                                         }
 
                                         content_view.show_all();
