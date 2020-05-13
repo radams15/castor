@@ -47,6 +47,16 @@ You will need some development libraries:
 - Open Castor and visit gemini://gemini.circumlunar.space and enjoy your trip!
 
 
+### Building on Ubuntu
+- apt install build-essential rustc cargo libgtk-3-dev libgdk-pixbuf2.0-dev libssl-dev
+- make and make install
+
+
+### Building on MacOS
+See instructions [here](https://tcp.rip/text/misc/install-castor.txt.html)
+
+
+
 ## Changing settings
 
 You can change some settings like initial URL, colors and delimiters for Headers, Lists, Text and Background.
