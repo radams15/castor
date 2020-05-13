@@ -108,14 +108,6 @@ impl FromStr for Link {
                 Some(link) => Ok(link),
                 None => Err(ParseError),
             }
-        } else if line.contains("://") {
-            let url = String::from(line);
-            let label = String::from(line);
-
-            match make_link(url, label) {
-                Some(link) => Ok(link),
-                None => Err(ParseError),
-            }
         } else if line.starts_with('h') {
             let label = els.next();
             let url = els.next();
@@ -135,6 +127,14 @@ impl FromStr for Link {
                 }
             } else {
                 Err(ParseError)
+            }
+        } else if line.contains("://") {
+            let url = String::from(line);
+            let label = String::from(line);
+
+            match make_link(url, label) {
+                Some(link) => Ok(link),
+                None => Err(ParseError),
             }
         } else {
             Err(ParseError)
