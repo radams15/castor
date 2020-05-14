@@ -35,14 +35,6 @@ impl FromStr for TextElement {
                 Ok(TextElement::Image(colors::cleanup(line)))
             } else if line.starts_with('9') {
                 Ok(TextElement::Binary(String::from(line)))
-            } else if line.contains("://") {
-                if line.contains("gopher://") {
-                    Ok(TextElement::LinkItem(String::from(line)))
-                } else if line.contains("http://") || line.contains("https://") {
-                    Ok(TextElement::ExternalLinkItem(String::from(line)))
-                } else {
-                    Ok(TextElement::Text(colors::colorize(line)))
-                }
             } else {
                 Ok(TextElement::Text(colors::colorize(line)))
             }
@@ -51,6 +43,12 @@ impl FromStr for TextElement {
             if line.contains("gopher://") {
                 Ok(TextElement::LinkItem(String::from(line)))
             } else if line.contains("http://") || line.contains("https://") {
+                Ok(TextElement::ExternalLinkItem(String::from(line)))
+            } else if line.contains("gemini://") {
+                Ok(TextElement::ExternalLinkItem(String::from(line)))
+            } else if line.contains("ftp://") {
+                Ok(TextElement::ExternalLinkItem(String::from(line)))
+            } else if line.contains("finger://") {
                 Ok(TextElement::ExternalLinkItem(String::from(line)))
             } else {
                 Ok(TextElement::Text(colors::colorize(line)))

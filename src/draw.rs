@@ -310,6 +310,26 @@ pub fn gopher_link(gui: &Arc<Gui>, link_item: String) {
             let new_url = Gopher { source: url }.to_absolute_url().unwrap();
             insert_button(&gui, new_url, label);
         }
+        Ok(GopherLink::Ftp(url, label)) => {
+            let button_label = if label.is_empty() {
+                url.clone().to_string()
+            } else {
+                label
+            };
+            let ftp_label = format!("{} [FTP]", button_label);
+
+            insert_external_button(&gui, url, &ftp_label);
+        }
+        Ok(GopherLink::Finger(url, label)) => {
+            let button_label = if label.is_empty() {
+                url.clone().to_string()
+            } else {
+                label
+            };
+            let finger_label = format!("{} [Finger]", button_label);
+
+            insert_external_button(&gui, url, &finger_label);
+        }
         Ok(GopherLink::Unknown(_, _)) => (),
         Err(_) => (),
     }

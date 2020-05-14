@@ -1,9 +1,14 @@
+extern crate regex;
+use regex::Regex;
+
 use std::str::FromStr;
 use url::Url;
 
 #[derive(Debug)]
 pub enum Link {
     File(Url, String),
+    Ftp(Url, String),
+    Finger(Url, String),
     Gemini(Url, String),
     Gopher(Url, String),
     Http(Url, String),
@@ -167,10 +172,10 @@ impl FromStr for Link {
                 Err(ParseError)
             }
         } else if line.contains("://") {
-            let url = String::from(line);
+            let url = extract_url(line);
             let label = String::from(line);
 
-            match make_link(url, label) {
+            match make_link(String::from(url), label) {
                 Some(link) => Ok(link),
                 None => Err(ParseError),
             }
@@ -183,6 +188,8 @@ impl FromStr for Link {
 pub fn make_link(url: String, label: String) -> Option<Link> {
     match Url::parse(&url) {
         Ok(url) => match url.scheme() {
+            "finger" => Some(Link::Finger(url, label)),
+            "ftp" => Some(Link::Ftp(url, label)),
             "gemini" => Some(Link::Gemini(url, label)),
             "gopher" => Some(Link::Gopher(url, label)),
             "http" => Some(Link::Http(url, label)),
@@ -191,5 +198,17 @@ pub fn make_link(url: String, label: String) -> Option<Link> {
         },
         Err(url::ParseError::RelativeUrlWithoutBase) => Some(Link::Relative(url, label)),
         _ => None,
+    }
+}
+
+const URL_REGEX: &str = r"((ftp|gopher|gemini|finger|http|https)://[a-zA-Z0-9-+&@#/%=~_|$?!:,.]*)";
+
+fn extract_url(line: &str) -> &str {
+    let url_regexp = Regex::new(URL_REGEX).unwrap();
+    if url_regexp.is_match(&line) {
+        let caps = url_regexp.captures(line).unwrap();
+        caps.get(1).map_or("", |m| m.as_str())
+    } else {
+        line
     }
 }
