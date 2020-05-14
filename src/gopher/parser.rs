@@ -3,6 +3,7 @@ use std::str::FromStr;
 
 #[derive(Debug)]
 pub enum TextElement {
+    Binary(String),
     ExternalLinkItem(String),
     LinkItem(String),
     Image(String),
@@ -32,6 +33,8 @@ impl FromStr for TextElement {
                 Ok(TextElement::ExternalLinkItem(colors::cleanup(line)))
             } else if line.starts_with('I') || line.starts_with('g') {
                 Ok(TextElement::Image(colors::cleanup(line)))
+            } else if line.starts_with('9') {
+                Ok(TextElement::Binary(String::from(line)))
             } else if line.contains("://") {
                 if line.contains("gopher://") {
                     Ok(TextElement::LinkItem(String::from(line)))

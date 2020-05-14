@@ -3,6 +3,7 @@ use url::Url;
 
 #[derive(Debug)]
 pub enum Link {
+    File(Url, String),
     Gemini(Url, String),
     Gopher(Url, String),
     Http(Url, String),
@@ -85,6 +86,43 @@ impl FromStr for Link {
                             host, port, selector, path
                         )) {
                             Ok(url) => Ok(Link::Image(url, text)),
+                            Err(e) => {
+                                println!("ERR {:?}", e);
+                                Err(ParseError)
+                            }
+                        }
+                    } else {
+                        Err(ParseError)
+                    }
+                } else {
+                    Err(ParseError)
+                }
+            } else {
+                Err(ParseError)
+            }
+        } else if line.starts_with('9') {
+            let label = els.next().expect("no label");
+            let path = els.next();
+            let host = els.next();
+            let port = els.next();
+
+            if let Some(host) = host {
+                if let Some(p) = path {
+                    let mut text = String::from(label);
+                    let selector = text.remove(0);
+
+                    let path = if p.starts_with('/') {
+                        p.to_string()
+                    } else {
+                        format!("/{}", p)
+                    };
+
+                    if let Some(port) = port {
+                        match Url::parse(&format!(
+                            "gopher://{}:{}/{}{}",
+                            host, port, selector, path
+                        )) {
+                            Ok(url) => Ok(Link::File(url, text)),
                             Err(e) => {
                                 println!("ERR {:?}", e);
                                 Err(ParseError)

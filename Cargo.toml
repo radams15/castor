@@ -1,6 +1,6 @@
 [package]
 name = "castor"
-version = "0.8.5"
+version = "0.8.6"
 authors = ["Julien Blanchard <julien@typed-hole.org>"]
 edition = "2018"
 

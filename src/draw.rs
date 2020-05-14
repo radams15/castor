@@ -180,6 +180,9 @@ pub fn gopher_content(
             Ok(crate::gopher::parser::TextElement::Image(link_item)) => {
                 gopher_link(&gui, link_item);
             }
+            Ok(crate::gopher::parser::TextElement::Binary(link_item)) => {
+                gopher_link(&gui, link_item);
+            }
             Err(_) => println!("Something failed."),
         }
     }
@@ -290,6 +293,15 @@ pub fn gopher_link(gui: &Arc<Gui>, link_item: String) {
             };
             let image_label = format!("{} [Image]", button_label);
             insert_gopher_file_button(&gui, url, image_label);
+        }
+        Ok(GopherLink::File(url, label)) => {
+            let button_label = if label.is_empty() {
+                url.clone().to_string()
+            } else {
+                label
+            };
+            let file_label = format!("{} [File]", button_label);
+            insert_gopher_file_button(&gui, url, file_label);
         }
         Ok(GopherLink::Gemini(url, label)) => {
             insert_button(&gui, url, label);
