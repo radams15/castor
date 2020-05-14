@@ -15,8 +15,9 @@ pub fn get_data<T: Protocol>(url: T) -> Result<(Option<Vec<u8>>, Vec<u8>), Strin
         None => 70,
     };
     let urlf = format!("{}:{}", host, port);
+
     let socket = match urlf.to_socket_addrs() {
-        Ok(mut iter) => iter.next(),
+        Ok(iter) => iter.rev().next(),
         Err(_) => None,
     };
 

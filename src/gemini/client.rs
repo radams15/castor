@@ -24,7 +24,7 @@ pub fn get_data<T: Protocol>(url: T) -> Result<(Option<Vec<u8>>, Vec<u8>), Strin
     let connector = builder.build().unwrap();
 
     match urlf.to_socket_addrs() {
-        Ok(mut addrs_iter) => match addrs_iter.next() {
+        Ok(addrs_iter) => match addrs_iter.rev().next() {
             Some(socket_addr) => {
                 let stream = TcpStream::connect_timeout(&socket_addr, Duration::new(5, 0));
 
