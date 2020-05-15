@@ -143,11 +143,10 @@ impl FromStr for Link {
                 Err(ParseError)
             }
         } else if line.starts_with('[') {
-            let mut url = String::from(line);
-            let url = url.split_off(4);
+            let url = extract_url(line);
             let label = String::from(line);
 
-            match make_link(url, label) {
+            match make_link(String::from(url), label) {
                 Some(link) => Ok(link),
                 None => Err(ParseError),
             }
@@ -170,14 +169,6 @@ impl FromStr for Link {
                 }
             } else {
                 Err(ParseError)
-            }
-        } else if line.contains("://") {
-            let url = extract_url(line);
-            let label = String::from(line);
-
-            match make_link(String::from(url), label) {
-                Some(link) => Ok(link),
-                None => Err(ParseError),
             }
         } else {
             Err(ParseError)
