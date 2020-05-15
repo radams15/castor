@@ -56,6 +56,9 @@ You will need some development libraries:
 See instructions [here](https://tcp.rip/text/misc/install-castor.txt.html)
 
 
+### Building on Windows
+See instructions [here](https://gist.github.com/sexybiggetje/3a4df41bb7f304aab02ea6006944f283)
+
 
 ## Changing settings
 
