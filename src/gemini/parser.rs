@@ -54,7 +54,7 @@ impl FromStr for TextElement {
             Ok(TextElement::ListItem(String::from(header)))
         } else if link_item_regexp.is_match(&line) {
             Ok(TextElement::LinkItem(String::from(line)))
-        } else if line == "```" {
+        } else if line.starts_with("```") {
             Ok(TextElement::MonoText(String::from(line)))
         } else {
             Ok(TextElement::Text(colors::colorize(line)))
