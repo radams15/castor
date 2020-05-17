@@ -42,13 +42,7 @@ impl FromStr for TextElement {
             // Text line
             if line.contains("gopher://") {
                 Ok(TextElement::LinkItem(String::from(line)))
-            } else if line.contains("http://") || line.contains("https://") {
-                Ok(TextElement::ExternalLinkItem(String::from(line)))
-            } else if line.contains("gemini://") {
-                Ok(TextElement::ExternalLinkItem(String::from(line)))
-            } else if line.contains("ftp://") {
-                Ok(TextElement::ExternalLinkItem(String::from(line)))
-            } else if line.contains("finger://") {
+            } else if line.contains("http://") || line.contains("https://") || line.contains("gemini://") || line.contains("finger://") || line.contains("ftp://") {
                 Ok(TextElement::ExternalLinkItem(String::from(line)))
             } else {
                 Ok(TextElement::Text(colors::colorize(line)))

@@ -1,6 +1,6 @@
 use native_tls::TlsConnector;
 use std::io::{Read, Write};
-use std::net::{TcpStream, ToSocketAddrs};
+use std::net::{SocketAddr::V4, SocketAddr::V6, TcpStream, ToSocketAddrs};
 use std::thread;
 use std::time::Duration;
 
@@ -24,8 +24,16 @@ pub fn get_data<T: Protocol>(url: T) -> Result<(Option<Vec<u8>>, Vec<u8>), Strin
     let connector = builder.build().unwrap();
 
     match urlf.to_socket_addrs() {
-        Ok(addrs_iter) => match addrs_iter.rev().next() {
+        Ok(mut addrs_iter) => match addrs_iter.next() {
             Some(socket_addr) => {
+                let socket_addr = match socket_addr {
+                    V4(ip) => V4(ip),
+                    V6(ip) => match addrs_iter.next() {
+                        Some(addr) => addr,
+                        None => V6(ip)
+                    }
+                };
+
                 let stream = TcpStream::connect_timeout(&socket_addr, Duration::new(5, 0));
 
                 match stream {
