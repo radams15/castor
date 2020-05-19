@@ -9,7 +9,8 @@ use crate::protocols::*;
 pub fn get_data<T: Protocol>(url: T) -> Result<(Option<Vec<u8>>, Vec<u8>), String> {
     let url = url.get_source_url();
     let host = url.host_str().unwrap();
-    let urlf = format!("{}:1965", host);
+    let port = url.port().unwrap_or(1965);
+    let urlf = format!("{}:{}", host, port);
 
     let mut builder = TlsConnector::builder();
     builder.danger_accept_invalid_hostnames(true);

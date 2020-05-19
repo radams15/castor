@@ -8,7 +8,8 @@ use crate::Protocol;
 pub fn get_data<T: Protocol>(url: T) -> Result<(Option<Vec<u8>>, Vec<u8>), String> {
     let url = url.get_source_url();
     let host = url.host_str().unwrap().to_string();
-    let urlf = format!("{}:79", host);
+    let port = url.port().unwrap_or(79);
+    let urlf = format!("{}:{}", host, port);
 
     match urlf.to_socket_addrs() {
         Ok(mut addrs_iter) => match addrs_iter.next() {

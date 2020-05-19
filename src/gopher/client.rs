@@ -9,10 +9,7 @@ use crate::Protocol;
 pub fn get_data<T: Protocol>(url: T) -> Result<(Option<Vec<u8>>, Vec<u8>), String> {
     let url = url.get_source_url();
     let host = url.host_str().unwrap().to_string();
-    let port = match url.port() {
-        Some(port) => port,
-        None => 70,
-    };
+    let port = url.port().unwrap_or(70);
     let urlf = format!("{}:{}", host, port);
 
     match urlf.to_socket_addrs() {
