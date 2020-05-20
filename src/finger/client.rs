@@ -37,13 +37,13 @@ pub fn get_data<T: Protocol>(url: T) -> Result<(Option<Vec<u8>>, Vec<u8>), Strin
 
                         Ok((None, res))
                     })
-                        .join()
-                        .unwrap(),
+                    .join()
+                    .unwrap(),
                     Err(e) => Err(format!("Could not connect to {}\n{}", urlf, e)),
                 }
             }
             None => Err(format!("Could not connect to {}\n", urlf)),
-        }
+        },
         Err(e) => Err(format!("Could not connect to {}\n{}", urlf, e)),
     }
 }

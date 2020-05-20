@@ -82,12 +82,33 @@ background = "#FFC0CB"
 h1 = ">"
 h2 = "))"
 h3 = "}}}"
-list = "🌼"
+list = "🌼 "
 
-[monospace]
-gemini=false
-gopher=true
-finger=true
+[fonts]
+[fonts.finger]
+    family = "monospace"
+    size = 11
+[fonts.gemini]
+    family = "serif"
+    size = 11
+[fonts.gemini.h1]
+    family = "sans"
+    size = 16
+    style = "normal"
+[fonts.gemini.h2]
+    family = "monospace"
+    size = 13
+    style = "italic"
+[fonts.gemini.h3]
+    family = "monospace"
+    size = 12
+[fonts.gemini.list]
+    family = "sans"
+    size = 11
+    style = "oblique"
+[fonts.gopher]
+    family = "monospace"
+    size = 11
 ```
 
 

@@ -190,7 +190,9 @@ pub fn visit_url<T: AbsoluteUrl + Protocol>(gui: &Arc<Gui>, url: T) {
             let absolute_url = url.to_absolute_url();
 
             match absolute_url {
-                Ok(absolute_url) => match gemini::client::get_data(Gemini { source: absolute_url.to_string() }) {
+                Ok(absolute_url) => match gemini::client::get_data(Gemini {
+                    source: absolute_url.to_string(),
+                }) {
                     Ok((meta, new_content)) => {
                         let meta_str = String::from_utf8_lossy(&meta.unwrap()).to_string();
 

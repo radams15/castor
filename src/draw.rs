@@ -19,11 +19,7 @@ pub fn gemini_content(
     let buffer = content_view.get_buffer().unwrap();
 
     let mut mono_toggle = false;
-    let font_family = if crate::settings::gemini_monospace() {
-        "monospace"
-    } else {
-        "sans"
-    };
+    let font_family = crate::settings::get_gemini_text_font_family();
 
     for el in content {
         match el {
@@ -32,10 +28,12 @@ pub fn gemini_content(
                 buffer.insert_markup(
                     &mut end_iter,
                     &format!(
-                        "<span foreground=\"{}\" size=\"x-large\" font_family=\"{}\">{}{}</span>\n",
-                        crate::settings::h1_color(),
-                        font_family,
-                        crate::settings::h1_character(),
+                        "<span foreground=\"{}\" size=\"{}\" font_family=\"{}\" style=\"{}\">{}{}</span>\n",
+                        crate::settings::get_h1_color(),
+                        crate::settings::get_gemini_h1_font_size(),
+                        crate::settings::get_gemini_h1_font_family(),
+                        crate::settings::get_gemini_h1_font_style(),
+                        crate::settings::get_h1_character(),
                         escape_text(&header)
                     ),
                 );
@@ -45,10 +43,12 @@ pub fn gemini_content(
                 buffer.insert_markup(
                     &mut end_iter,
                     &format!(
-                        "<span foreground=\"{}\" size=\"large\" font_family=\"{}\">{}{}</span>\n",
-                        crate::settings::h2_color(),
-                        font_family,
-                        crate::settings::h2_character(),
+                        "<span foreground=\"{}\" size=\"{}\" font_family=\"{}\" style=\"{}\">{}{}</span>\n",
+                        crate::settings::get_h2_color(),
+                        crate::settings::get_gemini_h2_font_size(),
+                        crate::settings::get_gemini_h2_font_family(),
+                        crate::settings::get_gemini_h2_font_style(),
+                        crate::settings::get_h2_character(),
                         escape_text(&header)
                     ),
                 );
@@ -58,10 +58,12 @@ pub fn gemini_content(
                 buffer.insert_markup(
                     &mut end_iter,
                     &format!(
-                        "<span foreground=\"{}\" size=\"medium\" font_family=\"{}\">{}{}</span>\n",
-                        crate::settings::h3_color(),
-                        font_family,
-                        crate::settings::h3_character(),
+                        "<span foreground=\"{}\" size=\"{}\" font_family=\"{}\" style=\"{}\">{}{}</span>\n",
+                        crate::settings::get_h3_color(),
+                        crate::settings::get_gemini_h3_font_size(),
+                        crate::settings::get_gemini_h3_font_family(),
+                        crate::settings::get_gemini_h3_font_style(),
+                        crate::settings::get_h3_character(),
                         escape_text(&header)
                     ),
                 );
@@ -71,10 +73,12 @@ pub fn gemini_content(
                 buffer.insert_markup(
                     &mut end_iter,
                     &format!(
-                        "<span foreground=\"{}\" font_family=\"{}\">{} {}</span>\n",
-                        crate::settings::list_color(),
-                        font_family,
-                        crate::settings::list_character(),
+                        "<span foreground=\"{}\" size=\"{}\" font_family=\"{}\" style=\"{}\">{}{}</span>\n",
+                        crate::settings::get_list_color(),
+                        crate::settings::get_gemini_list_font_size(),
+                        crate::settings::get_gemini_list_font_family(),
+                        crate::settings::get_gemini_list_font_style(),
+                        crate::settings::get_list_character(),
                         escape_text(&item)
                     ),
                 );
@@ -94,8 +98,9 @@ pub fn gemini_content(
                     buffer.insert_markup(
                         &mut end_iter,
                         &format!(
-                            "<span foreground=\"{}\" font_family=\"monospace\">{}</span>\n",
-                            crate::settings::text_color(),
+                            "<span foreground=\"{}\" font_family=\"monospace\" size=\"{}\">{}</span>\n",
+                            crate::settings::get_text_color(),
+                            crate::settings::get_gemini_text_font_size(),
                             text
                         ),
                     );
@@ -103,9 +108,10 @@ pub fn gemini_content(
                     buffer.insert_markup(
                         &mut end_iter,
                         &format!(
-                            "<span foreground=\"{}\" font_family=\"{}\">{}</span>\n",
-                            crate::settings::text_color(),
+                            "<span foreground=\"{}\" font_family=\"{}\" size=\"{}\">{}</span>\n",
+                            crate::settings::get_text_color(),
                             font_family,
+                            crate::settings::get_gemini_text_font_size(),
                             text
                         ),
                     );
@@ -130,7 +136,7 @@ pub fn gemini_text_content(gui: &Arc<Gui>, content: std::str::Lines) -> TextBuff
             &mut end_iter,
             &format!(
                 "<span foreground=\"{}\" font_family=\"monospace\">{}</span>\n",
-                crate::settings::text_color(),
+                crate::settings::get_text_color(),
                 escape_text(&line)
             ),
         );
@@ -149,11 +155,6 @@ pub fn gopher_content(
         match el {
             Ok(crate::gopher::parser::TextElement::Text(text)) => {
                 let mut end_iter = buffer.get_end_iter();
-                let font_family = if crate::settings::gopher_monospace() {
-                    "font_family=\"monospace\""
-                } else {
-                    "font_family=\"serif\""
-                };
 
                 let text = if text.contains("<span") {
                     text
@@ -164,9 +165,10 @@ pub fn gopher_content(
                 buffer.insert_markup(
                     &mut end_iter,
                     &format!(
-                        "<span foreground=\"{}\" {}>{}</span>\n",
-                        crate::settings::text_color(),
-                        font_family,
+                        "<span foreground=\"{}\" font_family=\"{}\" size=\"{}\">{}</span>\n",
+                        crate::settings::get_text_color(),
+                        crate::settings::get_gopher_font_family(),
+                        crate::settings::get_gopher_font_size(),
                         text
                     ),
                 );
@@ -200,18 +202,14 @@ pub fn finger_content(
         match el {
             Ok(crate::finger::parser::TextElement::Text(text)) => {
                 let mut end_iter = buffer.get_end_iter();
-                let font_family = if crate::settings::finger_monospace() {
-                    "font_family=\"monospace\""
-                } else {
-                    "font_family=\"serif\""
-                };
 
                 buffer.insert_markup(
                     &mut end_iter,
                     &format!(
-                        "<span foreground=\"{}\" {}>{}</span>\n",
-                        crate::settings::text_color(),
-                        font_family,
+                        "<span foreground=\"{}\" font_family=\"{}\" size=\"{}\">{}</span>\n",
+                        crate::settings::get_text_color(),
+                        crate::settings::get_finger_font_family(),
+                        crate::settings::get_finger_font_size(),
                         escape_text(&text)
                     ),
                 );

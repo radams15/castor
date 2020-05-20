@@ -1,6 +1,6 @@
 [package]
 name = "castor"
-version = "0.8.8"
+version = "0.8.9"
 authors = ["Julien Blanchard <julien@typed-hole.org>"]
 edition = "2018"
 
@@ -13,6 +13,7 @@ gio = "*"
 glib = "*"
 glib-sys = "*"
 pango = "*"
+pango-sys = "*"
 open = "*"
 regex = "*"
 native-tls = "*"

@@ -31,8 +31,8 @@ pub fn get_data<T: Protocol>(url: T) -> Result<(Option<Vec<u8>>, Vec<u8>), Strin
                     V4(ip) => V4(ip),
                     V6(ip) => match addrs_iter.next() {
                         Some(addr) => addr,
-                        None => V6(ip)
-                    }
+                        None => V6(ip),
+                    },
                 };
 
                 let stream = TcpStream::connect_timeout(&socket_addr, Duration::new(5, 0));

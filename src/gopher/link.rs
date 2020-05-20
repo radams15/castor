@@ -170,6 +170,14 @@ impl FromStr for Link {
             } else {
                 Err(ParseError)
             }
+        // } else if line.contains("://") {
+        //     let url = extract_url(line);
+        //     let label = String::from(line);
+
+        //     match make_link(String::from(url), label) {
+        //         Some(link) => Ok(link),
+        //         None => Err(ParseError),
+        //     }
         } else {
             Err(ParseError)
         }
