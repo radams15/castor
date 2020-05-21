@@ -157,9 +157,12 @@ fn update_url_field(gui: &Arc<Gui>, url: &str) {
 fn add_bookmark(gui: &Arc<Gui>) {
     let url_bar = gui.url_bar();
     let current_url = url_bar.get_text();
+
     if let Some(url) = current_url {
-        bookmarks::add(&url);
-        dialog::info(&gui, "Bookmark added.");
+        if url != "" {
+            bookmarks::add(&url);
+            dialog::info(&gui, "Bookmark added.");
+        }
     }
 }
 
