@@ -106,7 +106,9 @@ fn main() {
 }
 
 fn route_url(gui: &Arc<Gui>, url: String) {
-    if url.starts_with("gemini://") {
+    if url == "" {
+        return
+    } else if url.starts_with("gemini://") {
         visit_url(&gui, Gemini { source: url })
     } else if url.starts_with("gopher://") {
         visit_url(&gui, Gopher { source: url })
