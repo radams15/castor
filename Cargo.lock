@@ -112,7 +112,7 @@ dependencies = [
 
 [[package]]
 name = "castor"
-version = "0.8.9"
+version = "0.8.10"
 dependencies = [
  "ansi-parser",
  "dirs",
@@ -126,6 +126,7 @@ dependencies = [
  "native-tls",
  "open",
  "openssl",
+ "openssl-sys",
  "pango",
  "pango-sys",
  "percent-encoding",
@@ -525,8 +526,7 @@ checksum = "3728d817d99e5ac407411fa471ff9800a778d88a24685968b36824eaf4bee400"
 [[package]]
 name = "native-tls"
 version = "0.2.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b0d88c06fe90d5ee94048ba40409ef1d9315d86f6f38c2efdaad4fb50c58b2d"
+source = "git+https://github.com/julienXX/rust-native-tls#6496921fe0135e82d4fa9cff53d34847b2c80275"
 dependencies = [
  "lazy_static",
  "libc",
@@ -568,8 +568,7 @@ dependencies = [
 [[package]]
 name = "openssl"
 version = "0.10.29"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cee6d85f4cb4c4f59a6a85d5b68a233d280c82e29e822913b9c8b129fbf20bdd"
+source = "git+https://github.com/julienXX/rust-openssl#c2e14a7de3abd515aed51d48fa9965636888ad70"
 dependencies = [
  "bitflags",
  "cfg-if",
@@ -588,8 +587,7 @@ checksum = "77af24da69f9d9341038eba93a073b1fdaaa1b788221b00a69bce9e762cb32de"
 [[package]]
 name = "openssl-sys"
 version = "0.9.56"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f02309a7f127000ed50594f0b50ecc69e7c654e16d41b4e8156d1b3df8e0b52e"
+source = "git+https://github.com/julienXX/rust-openssl#c2e14a7de3abd515aed51d48fa9965636888ad70"
 dependencies = [
  "autocfg",
  "cc",

@@ -1,6 +1,6 @@
 [package]
 name = "castor"
-version = "0.8.9"
+version = "0.8.10"
 authors = ["Julien Blanchard <julien@typed-hole.org>"]
 edition = "2018"
 
@@ -16,8 +16,9 @@ pango = "*"
 pango-sys = "*"
 open = "*"
 regex = "*"
-native-tls = "*"
-openssl = "*"
+native-tls = { git = "https://github.com/julienXX/rust-native-tls", branch="master" }
+openssl = { git = "https://github.com/julienXX/rust-openssl", branch="master" }
+openssl-sys = { git = "https://github.com/julienXX/rust-openssl", branch="master" }
 url = "*"
 tempfile = "*"
 dirs = "*"
