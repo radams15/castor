@@ -2,8 +2,8 @@
 Name=Castor
 GenericName=Castor
 Comment=Browse the plain-text Internet.
-Categories=Browser;GTK
-Icon=org.typed-hole.castor.png
+Categories=Network;GTK
+Icon=org.typed-hole.castor
 Exec=castor %u
 Terminal=false
 Type=Application
