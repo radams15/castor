@@ -4,6 +4,14 @@ use std::fs;
 use std::fs::File;
 use std::fs::OpenOptions;
 use std::io::{Read, Write};
+use url::Url;
+
+pub fn is_valid(url: &str) -> bool {
+    match Url::parse(&url) {
+        Ok(_) => true,
+        _ => false,
+    }
+}
 
 pub fn add(url: &str) {
     let mut file = bookmarks_file();

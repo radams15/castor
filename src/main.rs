@@ -161,9 +161,12 @@ fn add_bookmark(gui: &Arc<Gui>) {
     let current_url = url_bar.get_text();
 
     if let Some(url) = current_url {
-        if url != "" {
+        if bookmarks::is_valid(&url) {
             bookmarks::add(&url);
             dialog::info(&gui, "Bookmark added.");
+        }
+        else {
+            dialog::error(&gui, "Invalid bookmark URL.");
         }
     }
 }
