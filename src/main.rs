@@ -215,7 +215,7 @@ pub fn visit_url<T: AbsoluteUrl + Protocol>(gui: &Arc<Gui>, url: T) {
                                             String::from_utf8_lossy(&new_content).to_string();
 
                                         clear_buffer(&content_view);
-                                        if meta == "text/gemini" {
+                                        if meta.starts_with("text/gemini") {
                                             let parsed_content = gemini::parser::parse(content_str);
                                             draw::gemini_content(&gui, parsed_content);
                                         } else {
