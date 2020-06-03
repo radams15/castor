@@ -31,4 +31,4 @@ serde_derive="*"
 
 [dependencies.gtk]
 version = "0.8.0"
-features = ["v3_22"]
+features = ["v3_18"]
