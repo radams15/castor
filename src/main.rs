@@ -234,6 +234,7 @@ pub fn visit_url<T: AbsoluteUrl + Protocol>(gui: &Arc<Gui>, url: T) {
                                 }
                                 Status::RedirectTemporary(new_url)
                                 | Status::RedirectPermanent(new_url) => {
+                                    history::append(absolute_url.as_str());
                                     visit_url(&gui, Gemini { source: new_url });
                                 }
                                 Status::TransientCertificateRequired(_meta)
