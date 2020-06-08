@@ -28,6 +28,7 @@ struct Color {
     list: Option<String>,
     text: Option<String>,
     background: Option<String>,
+    quote: Option<QuoteColor>,
 }
 
 #[derive(Deserialize)]
@@ -59,6 +60,13 @@ struct GeminiFontAttr {
     h2: Option<FontAttr>,
     h3: Option<FontAttr>,
     list: Option<FontAttr>,
+    quote: Option<FontAttr>,
+}
+
+#[derive(Debug, Deserialize)]
+struct QuoteColor {
+    foreground: Option<String>,
+    background: Option<String>,
 }
 
 pub fn start_url() -> Option<String> {
@@ -230,6 +238,18 @@ fn gemini_list_font_style() -> Option<String> {
     read().fonts?.gemini?.list?.style
 }
 
+fn gemini_quote_font_family() -> Option<String> {
+    read().fonts?.gemini?.quote?.family
+}
+
+fn gemini_quote_font_size() -> Option<i32> {
+    read().fonts?.gemini?.quote?.size
+}
+
+fn gemini_quote_font_style() -> Option<String> {
+    read().fonts?.gemini?.quote?.style
+}
+
 pub fn get_gemini_list_font_size() -> i32 {
     match gemini_list_font_size() {
         Some(size) => size * pango_sys::PANGO_SCALE,
@@ -248,6 +268,27 @@ pub fn get_gemini_list_font_style() -> String {
     match gemini_list_font_style() {
         Some(style) => style,
         None => String::from(DEFAULT_FONT_STYLE),
+    }
+}
+
+pub fn get_gemini_quote_font_size() -> i32 {
+    match gemini_quote_font_size() {
+        Some(size) => size * pango_sys::PANGO_SCALE,
+        None => DEFAULT_FONT_SIZE,
+    }
+}
+
+pub fn get_gemini_quote_font_family() -> String {
+    match gemini_quote_font_family() {
+        Some(family) => family,
+        None => String::from(DEFAULT_FONT),
+    }
+}
+
+pub fn get_gemini_quote_font_style() -> String {
+    match gemini_quote_font_style() {
+        Some(style) => style,
+        None => String::from("italic"),
     }
 }
 
@@ -314,6 +355,30 @@ pub fn get_list_color() -> String {
     match list_color() {
         Some(color) => color,
         None => String::from("green"),
+    }
+}
+
+fn quote_color() -> Option<QuoteColor> {
+    read().colors?.quote
+}
+
+pub fn get_gemini_quote_foreground_color() -> String {
+    match quote_color() {
+        Some(color) => match color.foreground {
+            Some(color) => color,
+            None => String::from("#e4e4e4"),
+        },
+        None => String::from("#e4e4e4"),
+    }
+}
+
+pub fn get_gemini_quote_background_color() -> String {
+    match quote_color() {
+        Some(color) => match color.foreground {
+            Some(color) => color,
+            None => String::from("grey"),
+        },
+        None => String::from("grey"),
     }
 }
 

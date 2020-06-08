@@ -4,12 +4,17 @@ use gtk::TextBuffer;
 use std::str::FromStr;
 use std::sync::Arc;
 use url::Url;
+use std::convert::TryInto;
+
+extern crate textwrap;
+use textwrap::fill;
 
 use crate::absolute_url::AbsoluteUrl;
 use crate::gemini::link::Link as GeminiLink;
 use crate::gopher::link::Link as GopherLink;
 use crate::gui::Gui;
 use crate::protocols::{Finger, Gemini, Gopher};
+
 
 pub fn gemini_content(
     gui: &Arc<Gui>,
@@ -23,87 +28,108 @@ pub fn gemini_content(
 
     for el in content {
         match el {
-            Ok(crate::gemini::parser::TextElement::H1(header)) => {
-                let mut end_iter = buffer.get_end_iter();
-                buffer.insert_markup(
-                    &mut end_iter,
-                    &format!(
-                        "<span foreground=\"{}\" size=\"{}\" font_family=\"{}\" style=\"{}\">{}{}</span>\n",
-                        crate::settings::get_h1_color(),
-                        crate::settings::get_gemini_h1_font_size(),
-                        crate::settings::get_gemini_h1_font_family(),
-                        crate::settings::get_gemini_h1_font_style(),
-                        crate::settings::get_h1_character(),
-                        escape_text(&header)
-                    ),
-                );
-            }
-            Ok(crate::gemini::parser::TextElement::H2(header)) => {
-                let mut end_iter = buffer.get_end_iter();
-                buffer.insert_markup(
-                    &mut end_iter,
-                    &format!(
-                        "<span foreground=\"{}\" size=\"{}\" font_family=\"{}\" style=\"{}\">{}{}</span>\n",
-                        crate::settings::get_h2_color(),
-                        crate::settings::get_gemini_h2_font_size(),
-                        crate::settings::get_gemini_h2_font_family(),
-                        crate::settings::get_gemini_h2_font_style(),
-                        crate::settings::get_h2_character(),
-                        escape_text(&header)
-                    ),
-                );
-            }
-            Ok(crate::gemini::parser::TextElement::H3(header)) => {
-                let mut end_iter = buffer.get_end_iter();
-                buffer.insert_markup(
-                    &mut end_iter,
-                    &format!(
-                        "<span foreground=\"{}\" size=\"{}\" font_family=\"{}\" style=\"{}\">{}{}</span>\n",
-                        crate::settings::get_h3_color(),
-                        crate::settings::get_gemini_h3_font_size(),
-                        crate::settings::get_gemini_h3_font_family(),
-                        crate::settings::get_gemini_h3_font_style(),
-                        crate::settings::get_h3_character(),
-                        escape_text(&header)
-                    ),
-                );
-            }
-            Ok(crate::gemini::parser::TextElement::ListItem(item)) => {
-                let mut end_iter = buffer.get_end_iter();
-                buffer.insert_markup(
-                    &mut end_iter,
-                    &format!(
-                        "<span foreground=\"{}\" size=\"{}\" font_family=\"{}\" style=\"{}\">{}{}</span>\n",
-                        crate::settings::get_list_color(),
-                        crate::settings::get_gemini_list_font_size(),
-                        crate::settings::get_gemini_list_font_family(),
-                        crate::settings::get_gemini_list_font_style(),
-                        crate::settings::get_list_character(),
-                        escape_text(&item)
-                    ),
-                );
-            }
             Ok(crate::gemini::parser::TextElement::MonoText(_text)) => {
                 mono_toggle = !mono_toggle;
             }
-            Ok(crate::gemini::parser::TextElement::Text(text)) => {
+            Ok(crate::gemini::parser::TextElement::H1(header)) => {
                 let mut end_iter = buffer.get_end_iter();
-                let text = if text.contains("<span") {
-                    text
-                } else {
-                    escape_text(&text)
-                };
-
                 if mono_toggle {
+                    buffer.insert_markup(&mut end_iter, &mono_span(header));
+                } else {
+                  buffer.insert_markup(
+                      &mut end_iter,
+                      &format!(
+                          "<span foreground=\"{}\" size=\"{}\" font_family=\"{}\" style=\"{}\">{}{}</span>\n",
+                          crate::settings::get_h1_color(),
+                          crate::settings::get_gemini_h1_font_size(),
+                          crate::settings::get_gemini_h1_font_family(),
+                          crate::settings::get_gemini_h1_font_style(),
+                          crate::settings::get_h1_character(),
+                          header
+                      ),
+                  );
+                }
+            }
+            Ok(crate::gemini::parser::TextElement::H2(header)) => {
+                let mut end_iter = buffer.get_end_iter();
+                if mono_toggle {
+                    buffer.insert_markup(&mut end_iter, &mono_span(header));
+               } else {
+                  buffer.insert_markup(
+                      &mut end_iter,
+                      &format!(
+                          "<span foreground=\"{}\" size=\"{}\" font_family=\"{}\" style=\"{}\">{}{}</span>\n",
+                          crate::settings::get_h2_color(),
+                          crate::settings::get_gemini_h2_font_size(),
+                          crate::settings::get_gemini_h2_font_family(),
+                          crate::settings::get_gemini_h2_font_style(),
+                          crate::settings::get_h2_character(),
+                          header
+                      ),
+                  );
+                }
+            }
+            Ok(crate::gemini::parser::TextElement::H3(header)) => {
+                let mut end_iter = buffer.get_end_iter();
+                if mono_toggle {
+                    buffer.insert_markup(&mut end_iter, &mono_span(header));
+                } else {
                     buffer.insert_markup(
                         &mut end_iter,
                         &format!(
-                            "<span foreground=\"{}\" font_family=\"monospace\" size=\"{}\">{}</span>\n",
-                            crate::settings::get_text_color(),
-                            crate::settings::get_gemini_text_font_size(),
-                            text
+                            "<span foreground=\"{}\" size=\"{}\" font_family=\"{}\" style=\"{}\">{}{}</span>\n",
+                            crate::settings::get_h3_color(),
+                            crate::settings::get_gemini_h3_font_size(),
+                            crate::settings::get_gemini_h3_font_family(),
+                            crate::settings::get_gemini_h3_font_style(),
+                            crate::settings::get_h3_character(),
+                            header
                         ),
                     );
+                }
+            }
+            Ok(crate::gemini::parser::TextElement::ListItem(item)) => {
+                let mut end_iter = buffer.get_end_iter();
+                if mono_toggle {
+                    buffer.insert_markup(&mut end_iter, &mono_span(item));
+                } else {
+                    buffer.insert_markup(
+                      &mut end_iter,
+                      &format!(
+                          "<span foreground=\"{}\" size=\"{}\" font_family=\"{}\" style=\"{}\">{}{}</span>\n",
+                          crate::settings::get_list_color(),
+                          crate::settings::get_gemini_list_font_size(),
+                          crate::settings::get_gemini_list_font_family(),
+                          crate::settings::get_gemini_list_font_style(),
+                          crate::settings::get_list_character(),
+                          escape_text(&item)
+                      ),
+                  );
+                }
+            }
+            Ok(crate::gemini::parser::TextElement::Quote(mut text)) => {
+                let mut end_iter = buffer.get_end_iter();
+                if mono_toggle {
+                    buffer.insert_markup(&mut end_iter, &mono_span(text));
+                } else {
+                    buffer.insert_markup(
+                        &mut end_iter,
+                        &format!(
+                            "<span foreground=\"{}\" background=\"{}\" font_family=\"{}\" size=\"{}\" style=\"{}\">{}</span>\n",
+                            crate::settings::get_gemini_quote_foreground_color(),
+                            crate::settings::get_gemini_quote_background_color(),
+                            crate::settings::get_gemini_quote_font_family(),
+                            crate::settings::get_gemini_quote_font_size(),
+                            crate::settings::get_gemini_quote_font_style(),
+                            fill(&text.split_off(2), width(&gui))
+                        ),
+                    );
+                }
+            }
+            Ok(crate::gemini::parser::TextElement::Text(text)) => {
+                let mut end_iter = buffer.get_end_iter();
+                if mono_toggle {
+                    buffer.insert_markup(&mut end_iter, &mono_span(escape_text(&text)));
                 } else {
                     buffer.insert_markup(
                         &mut end_iter,
@@ -112,13 +138,18 @@ pub fn gemini_content(
                             crate::settings::get_text_color(),
                             font_family,
                             crate::settings::get_gemini_text_font_size(),
-                            text
+                            fill(&escape_text(&text), width(&gui))
                         ),
                     );
                 }
             }
             Ok(crate::gemini::parser::TextElement::LinkItem(link_item)) => {
-                gemini_link(&gui, link_item);
+                if mono_toggle {
+                    let mut end_iter = buffer.get_end_iter();
+                    buffer.insert_markup(&mut end_iter, &mono_span(escape_text(&link_item)));
+                } else {
+                    gemini_link(&gui, link_item);
+                }
             }
             Err(_) => println!("Something failed."),
         }
@@ -410,4 +441,18 @@ pub fn insert_external_button(gui: &Arc<Gui>, url: Url, label: &str) {
 
 fn escape_text(str: &str) -> String {
     String::from(glib::markup_escape_text(&str).as_str())
+}
+
+fn mono_span(text: String) -> String {
+    format!(
+        "<span foreground=\"{}\" font_family=\"monospace\" size=\"{}\">{}</span>\n",
+        crate::settings::get_text_color(),
+        crate::settings::get_gemini_text_font_size(),
+        text
+    )
+}
+
+fn width(gui: &Arc<Gui>) -> usize {
+    let (win_width, _) = gtk::ApplicationWindow::get_size(gui.window());
+    (win_width / 10).try_into().unwrap()
 }

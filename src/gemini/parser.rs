@@ -14,6 +14,7 @@ pub enum TextElement {
     LinkItem(String),
     Text(String),
     MonoText(String),
+    Quote(String),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -56,6 +57,8 @@ impl FromStr for TextElement {
             Ok(TextElement::LinkItem(String::from(line)))
         } else if line.starts_with("```") {
             Ok(TextElement::MonoText(String::from(line)))
+        } else if line.starts_with("> ") {
+            Ok(TextElement::Quote(String::from(line)))
         } else {
             Ok(TextElement::Text(colors::colorize(line)))
         }
