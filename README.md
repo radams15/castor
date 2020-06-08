@@ -77,6 +77,9 @@ h3 = "green"
 list = "#C71585"
 text = "#FF1493"
 background = "#FFC0CB"
+[colors.quote]
+    foreground="#e4e4e4"
+    background="grey"
 
 [characters]
 h1 = ">"
@@ -106,6 +109,10 @@ list = "🌼 "
     family = "sans"
     size = 11
     style = "oblique"
+[fonts.gemini.quote]
+    family = "sans"
+    size = 10
+    style = "italic"
 [fonts.gopher]
     family = "monospace"
     size = 11

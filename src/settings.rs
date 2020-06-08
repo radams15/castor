@@ -374,7 +374,7 @@ pub fn get_gemini_quote_foreground_color() -> String {
 
 pub fn get_gemini_quote_background_color() -> String {
     match quote_color() {
-        Some(color) => match color.foreground {
+        Some(color) => match color.background {
             Some(color) => color,
             None => String::from("grey"),
         },
