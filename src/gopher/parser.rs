@@ -1,4 +1,3 @@
-use crate::colors::*;
 use std::str::FromStr;
 
 #[derive(Debug)]
@@ -22,21 +21,21 @@ impl FromStr for TextElement {
         if els.count() >= 2 {
             // Gophermap line
             if line.starts_with('0') || line.starts_with('1') {
-                Ok(TextElement::LinkItem(colors::cleanup(line)))
+                Ok(TextElement::LinkItem(String::from(line)))
             } else if line.starts_with('i') {
                 let mut els = line.split('\t');
                 let text = els.next().expect("");
                 let mut text = String::from(text);
                 text.remove(0);
-                Ok(TextElement::Text(colors::colorize(&text)))
+                Ok(TextElement::Text(text))
             } else if line.starts_with('h') {
-                Ok(TextElement::ExternalLinkItem(colors::cleanup(line)))
+                Ok(TextElement::ExternalLinkItem(String::from(line)))
             } else if line.starts_with('I') || line.starts_with('g') {
-                Ok(TextElement::Image(colors::cleanup(line)))
+                Ok(TextElement::Image(String::from(line)))
             } else if line.starts_with('9') {
                 Ok(TextElement::Binary(String::from(line)))
             } else {
-                Ok(TextElement::Text(colors::colorize(line)))
+                Ok(TextElement::Text(String::from(line)))
             }
         } else {
             // Text line
@@ -50,7 +49,7 @@ impl FromStr for TextElement {
             {
                 Ok(TextElement::ExternalLinkItem(String::from(line)))
             } else {
-                Ok(TextElement::Text(colors::colorize(line)))
+                Ok(TextElement::Text(String::from(line)))
             }
         }
     }
