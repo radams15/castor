@@ -53,8 +53,8 @@
                 <property name="margin_bottom">15</property>
                 <property name="image">image3</property>
                 <property name="always_show_image">True</property>
+                <accelerator key="Back" signal="clicked"/>
                 <accelerator key="Left" signal="clicked" modifiers="GDK_MOD1_MASK"/>
-                <accelerator key="XF86Back" signal="clicked"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -139,7 +139,6 @@
                 <property name="app_paintable">True</property>
                 <property name="can_focus">True</property>
                 <property name="editable">False</property>
-                <property name="wrap_mode">word</property>
                 <property name="left_margin">10</property>
                 <property name="right_margin">10</property>
                 <property name="top_margin">5</property>

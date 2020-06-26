@@ -10,6 +10,7 @@ extern crate textwrap;
 use textwrap::fill;
 
 use crate::absolute_url::AbsoluteUrl;
+use crate::colors::*;
 use crate::gemini::link::Link as GeminiLink;
 use crate::gopher::link::Link as GopherLink;
 use crate::gui::Gui;
@@ -102,12 +103,12 @@ pub fn gemini_content(
                           crate::settings::get_gemini_list_font_family(),
                           crate::settings::get_gemini_list_font_style(),
                           crate::settings::get_list_character(),
-                          escape_text(&item)
+                          wrap_text(&item, &gui)
                       ),
                   );
                 }
             }
-            Ok(crate::gemini::parser::TextElement::Quote(mut text)) => {
+            Ok(crate::gemini::parser::TextElement::Quote(text)) => {
                 let mut end_iter = buffer.get_end_iter();
                 if mono_toggle {
                     buffer.insert_markup(&mut end_iter, &mono_span(text));
@@ -121,7 +122,7 @@ pub fn gemini_content(
                             crate::settings::get_gemini_quote_font_family(),
                             crate::settings::get_gemini_quote_font_size(),
                             crate::settings::get_gemini_quote_font_style(),
-                            fill(&text.split_off(2), width(&gui))
+                            wrap_text(&text, &gui)
                         ),
                     );
                 }
@@ -129,7 +130,7 @@ pub fn gemini_content(
             Ok(crate::gemini::parser::TextElement::Text(text)) => {
                 let mut end_iter = buffer.get_end_iter();
                 if mono_toggle {
-                    buffer.insert_markup(&mut end_iter, &mono_span(escape_text(&text)));
+                    buffer.insert_markup(&mut end_iter, &mono_span(colors::colorize(&text)));
                 } else {
                     buffer.insert_markup(
                         &mut end_iter,
@@ -138,7 +139,7 @@ pub fn gemini_content(
                             crate::settings::get_text_color(),
                             font_family,
                             crate::settings::get_gemini_text_font_size(),
-                            fill(&escape_text(&text), width(&gui))
+                            wrap_text(&text, &gui)
                         ),
                     );
                 }
@@ -168,7 +169,7 @@ pub fn gemini_text_content(gui: &Arc<Gui>, content: std::str::Lines) -> TextBuff
             &format!(
                 "<span foreground=\"{}\" font_family=\"monospace\">{}</span>\n",
                 crate::settings::get_text_color(),
-                escape_text(&line)
+                colors::colorize(&line)
             ),
         );
     }
@@ -186,12 +187,7 @@ pub fn gopher_content(
         match el {
             Ok(crate::gopher::parser::TextElement::Text(text)) => {
                 let mut end_iter = buffer.get_end_iter();
-
-                let text = if text.contains("<span") {
-                    text
-                } else {
-                    escape_text(&text)
-                };
+                let text = colors::colorize(&text);
 
                 buffer.insert_markup(
                     &mut end_iter,
@@ -205,10 +201,10 @@ pub fn gopher_content(
                 );
             }
             Ok(crate::gopher::parser::TextElement::LinkItem(link_item)) => {
-                gopher_link(&gui, link_item);
+                gopher_link(&gui, colors::cleanup(&link_item));
             }
             Ok(crate::gopher::parser::TextElement::ExternalLinkItem(link_item)) => {
-                gopher_link(&gui, link_item);
+                gopher_link(&gui, colors::cleanup(&link_item));
             }
             Ok(crate::gopher::parser::TextElement::Image(link_item)) => {
                 gopher_link(&gui, link_item);
@@ -437,6 +433,10 @@ pub fn insert_external_button(gui: &Arc<Gui>, url: Url, label: &str) {
     content_view.add_child_at_anchor(&button, &anchor);
     let mut end_iter = buffer.get_end_iter();
     buffer.insert(&mut end_iter, "\n");
+}
+
+fn wrap_text(str: &str, gui: &Arc<Gui>) -> String {
+    fill(&escape_text(str), width(&gui))
 }
 
 fn escape_text(str: &str) -> String {
