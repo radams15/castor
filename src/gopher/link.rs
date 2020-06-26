@@ -1,5 +1,5 @@
-extern crate regex;
-use regex::Regex;
+extern crate linkify;
+use linkify::LinkFinder;
 
 use std::str::FromStr;
 use url::Url;
@@ -170,14 +170,14 @@ impl FromStr for Link {
             } else {
                 Err(ParseError)
             }
-        // } else if line.contains("://") {
-        //     let url = extract_url(line);
-        //     let label = String::from(line);
+        } else if line.contains("://") {
+            let url = extract_url(line);
+            let label = String::from(line);
 
-        //     match make_link(String::from(url), label) {
-        //         Some(link) => Ok(link),
-        //         None => Err(ParseError),
-        //     }
+            match make_link(String::from(url), label) {
+                Some(link) => Ok(link),
+                None => Err(ParseError),
+            }
         } else {
             Err(ParseError)
         }
@@ -200,14 +200,9 @@ pub fn make_link(url: String, label: String) -> Option<Link> {
     }
 }
 
-const URL_REGEX: &str = r"((ftp|gopher|gemini|finger|http|https)://[a-zA-Z0-9-+&@#/%=~_|$?!:,.]*)";
-
 fn extract_url(line: &str) -> &str {
-    let url_regexp = Regex::new(URL_REGEX).unwrap();
-    if url_regexp.is_match(&line) {
-        let caps = url_regexp.captures(line).unwrap();
-        caps.get(1).map_or("", |m| m.as_str())
-    } else {
-        line
-    }
+    let finder = LinkFinder::new();
+    let links: Vec<_> = finder.links(line).collect();
+    let link = &links[0];
+    link.as_str()
 }
