@@ -26,10 +26,10 @@ impl FromStr for TextElement {
         } else if line.starts_with("##") {
             let text = line.split_at(2).1.trim();
             Ok(TextElement::H2(String::from(text)))
-        } else if line.starts_with("#") {
+        } else if line.starts_with('#') {
             let text = line.split_at(1).1.trim();
             Ok(TextElement::H1(String::from(text)))
-        } else if line.starts_with("*") {
+        } else if line.starts_with('*') {
             let text = line.split_at(1).1.trim();
             Ok(TextElement::ListItem(String::from(text)))
         } else if line.starts_with("=>") {
@@ -37,7 +37,7 @@ impl FromStr for TextElement {
         } else if line.starts_with("```") {
             let text = line.split_at(3).1.trim();
             Ok(TextElement::MonoText(String::from(text)))
-        } else if line.starts_with(">") {
+        } else if line.starts_with('>') {
             let text = line.split_at(1).1.trim();
             Ok(TextElement::Quote(String::from(text)))
         } else {

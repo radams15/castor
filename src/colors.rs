@@ -2,39 +2,57 @@ pub mod colors {
     use ansi_parser::AnsiSequence;
     use ansi_parser::{AnsiParser, Output};
 
-    extern crate regex;
-    use regex::Regex;
-
-    const COLOR_CODE_REGEX: &str = r"(?-u)\u{1b}\[[\d|;]+m";
-
     pub fn cleanup(line: &str) -> String {
-        let color_code_regexp = Regex::new(COLOR_CODE_REGEX).unwrap();
-        let line = color_code_regexp.replace_all(line, "");
-        String::from(line)
+        let parsed: Vec<Output> = line.ansi_parse().collect();
+        let mut s = String::new();
+
+        for p in parsed {
+            match p {
+                Output::TextBlock(text) => {
+                    let clean_text = glib::markup_escape_text(&text);
+                    s.push_str(&clean_text)
+                }
+                _ => s.push_str(""),
+            }
+        }
+        s
     }
 
     pub fn colorize(line: &str) -> String {
         let parsed: Vec<Output> = line.ansi_parse().collect();
 
         let mut s = String::new();
+        let mut span_opened = 0;
+
         for p in parsed {
             match p {
                 Output::Escape(AnsiSequence::SetGraphicsMode(colors)) => {
                     if colors.len() == 1 {
                         s.push_str("");
-                    } else {
+                    } else if colors[0] == 38 {
                         let color = colors.last().unwrap();
+                        span_opened += 1;
                         s.push_str(&format!(
                             "<span foreground={:?}>",
+                            ansi_color_to_hex(*color)
+                        ))
+                    } else {
+                        let color = colors.last().unwrap();
+                        span_opened += 1;
+                        s.push_str(&format!(
+                            "<span background={:?}>",
                             ansi_color_to_hex(*color)
                         ))
                     }
                 }
                 Output::TextBlock(text) => {
-                    if s.ends_with('>') {
-                        s.push_str(&format!("{}</span>", text))
+                    let clean_text = glib::markup_escape_text(&text);
+                    if span_opened > 0 {
+                        let spans = "</span>".repeat(span_opened);
+                        span_opened = 0;
+                        s.push_str(&format!("{}{}", clean_text, spans))
                     } else {
-                        s.push_str(text)
+                        s.push_str(&clean_text)
                     }
                 }
                 _ => s.push_str("something else"),
@@ -45,6 +63,8 @@ pub mod colors {
 
     fn ansi_color_to_hex(color: u32) -> &'static str {
         match color {
+            7  => "#dadada",
+            8  => "#6c6c6c",
             10 => "#00ff00",
             11 => "#ffff00",
             12 => "#0000ff",
@@ -291,7 +311,7 @@ pub mod colors {
             253 => "#dadada",
             254 => "#e4e4e4",
             255 => "#eeeeee",
-            _ => "#00ff00",
+            _ => "#000000",
         }
     }
 }
