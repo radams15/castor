@@ -88,6 +88,18 @@ fn main() {
         });
     }
 
+    // Bind Mouse-Back
+    {
+        let gui_clone = gui.clone();
+        let content_view = gui.content_view();
+        content_view.connect_button_press_event(move |_, event| {
+            if event.get_button() == 8 {
+                go_back(&gui_clone);
+            }
+            Inhibit(false)
+        });
+    }
+
     // Use passed URL or settings start_url
     let args: Vec<String> = env::args().collect();
     match args.len() {
