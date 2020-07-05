@@ -69,6 +69,7 @@ These are the keys currently supported, you can use hex codes, plain colors name
 ```
 [general]
 start_url = "gemini://gemini.circumlunar.space/capcom"
+max_width = 200
 
 [colors]
 h1 = "red"

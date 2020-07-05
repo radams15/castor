@@ -18,6 +18,7 @@ struct Settings {
 #[derive(Deserialize)]
 struct General {
     start_url: Option<String>,
+    max_width: Option<usize>,
 }
 
 #[derive(Deserialize)]
@@ -72,6 +73,13 @@ struct QuoteColor {
 pub fn start_url() -> Option<String> {
     match read().general {
         Some(general) => general.start_url,
+        None => None,
+    }
+}
+
+pub fn max_width() -> Option<usize> {
+    match read().general {
+        Some(general) => general.max_width,
         None => None,
     }
 }

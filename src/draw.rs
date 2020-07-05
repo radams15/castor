@@ -454,5 +454,6 @@ fn mono_span(text: String) -> String {
 
 fn width(gui: &Arc<Gui>) -> usize {
     let (win_width, _) = gtk::ApplicationWindow::get_size(gui.window());
-    (win_width / 10).try_into().unwrap()
+    let calculated_width = (win_width / 10).try_into().unwrap();
+    std::cmp::min(calculated_width, crate::settings::max_width().unwrap_or(std::usize::MAX))
 }

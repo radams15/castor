@@ -1,5 +1,6 @@
 [general]
 start_url = "gemini://gemini.circumlunar.space/capcom"
+max_width = 200
 
 [colors]
 h1 = "red"
