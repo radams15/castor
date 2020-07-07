@@ -92,7 +92,7 @@ list = "🌼 "
 [fonts.finger]
     family = "monospace"
     size = 11
-[fonts.gemini]
+[fonts.gemini.text]
     family = "serif"
     size = 11
 [fonts.gemini.h1]
