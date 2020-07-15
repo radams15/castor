@@ -57,8 +57,8 @@
                 <property name="margin_bottom">15</property>
                 <property name="image">image3</property>
                 <property name="always_show_image">True</property>
-                <accelerator key="Back" signal="clicked"/>
                 <accelerator key="Left" signal="clicked" modifiers="GDK_MOD1_MASK"/>
+                <accelerator key="Back" signal="clicked"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -89,6 +89,26 @@
               </packing>
             </child>
             <child>
+              <object class="GtkEntry" id="url_bar">
+                <property name="name">url_bar</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="margin_left">10</property>
+                <property name="margin_right">10</property>
+                <property name="margin_top">15</property>
+                <property name="margin_bottom">15</property>
+                <property name="placeholder_text" translatable="yes">Enter a URL...</property>
+                <property name="input_purpose">url</property>
+                <accelerator key="l" signal="grab-focus" modifiers="GDK_CONTROL_MASK"/>
+              </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="padding">1</property>
+                <property name="position">2</property>
+              </packing>
+            </child>
+            <child>
               <object class="GtkButton" id="add_bookmark_button">
                 <property name="name">add_bookmark_button</property>
                 <property name="visible">True</property>
@@ -105,7 +125,7 @@
                 <property name="expand">False</property>
                 <property name="fill">True</property>
                 <property name="padding">1</property>
-                <property name="position">2</property>
+                <property name="position">3</property>
               </packing>
             </child>
             <child>
@@ -115,6 +135,7 @@
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="tooltip_text" translatable="yes">Show Bookmarks</property>
+                <property name="margin_right">6</property>
                 <property name="margin_top">15</property>
                 <property name="margin_bottom">15</property>
                 <property name="image">image2</property>
@@ -122,24 +143,6 @@
               </object>
               <packing>
                 <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="position">3</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkEntry" id="url_bar">
-                <property name="name">url_bar</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="margin_right">6</property>
-                <property name="margin_top">15</property>
-                <property name="margin_bottom">15</property>
-                <property name="placeholder_text" translatable="yes">Enter a URL...</property>
-                <property name="input_purpose">url</property>
-                <accelerator key="l" signal="grab-focus" modifiers="GDK_CONTROL_MASK"/>
-              </object>
-              <packing>
-                <property name="expand">True</property>
                 <property name="fill">True</property>
                 <property name="padding">1</property>
                 <property name="position">4</property>
