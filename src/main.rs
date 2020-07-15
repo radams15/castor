@@ -60,6 +60,15 @@ fn main() {
         });
     }
 
+    // Bind refresh button
+    {
+        let button = gui.refresh_button();
+        let gui = gui.clone();
+        button.connect_clicked(move |_| {
+            refresh(&gui);
+        });
+    }
+
     // Bind add_bookmark button
     {
         let button = gui.add_bookmark_button();
@@ -160,6 +169,12 @@ fn go_back(gui: &Arc<Gui>) {
             _ => (),
         }
     }
+}
+
+fn refresh(gui: &Arc<Gui>) {
+    let url_bar = gui.url_bar();
+    let url = url_bar.get_text().expect("get_text failed").to_string();
+    route_url(&gui, url)
 }
 
 fn update_url_field(gui: &Arc<Gui>, url: &str) {

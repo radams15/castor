@@ -8,6 +8,7 @@ pub struct Gui {
     url_bar: Entry,
     content_view: TextView,
     back_button: Button,
+    refresh_button: Button,
     add_bookmark_button: Button,
     show_bookmarks_button: Button,
 }
@@ -33,6 +34,9 @@ impl Gui {
         let back_button: Button = builder
             .get_object("back_button")
             .expect("Couldn't get back_button");
+        let refresh_button: Button = builder
+            .get_object("refresh_button")
+            .expect("Couldn't get refresh_button");
         let add_bookmark_button: Button = builder
             .get_object("add_bookmark_button")
             .expect("Couldn't get add_bookmark_button");
@@ -45,6 +49,7 @@ impl Gui {
             url_bar,
             content_view,
             back_button,
+            refresh_button,
             add_bookmark_button,
             show_bookmarks_button,
         }
@@ -79,6 +84,10 @@ impl Gui {
 
     pub fn back_button(&self) -> &Button {
         &self.back_button
+    }
+
+    pub fn refresh_button(&self) -> &Button {
+        &self.refresh_button
     }
 
     pub fn add_bookmark_button(&self) -> &Button {
