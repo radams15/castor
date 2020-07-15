@@ -49,6 +49,11 @@ pub fn get_data<T: Protocol>(url: T) -> Result<(Option<Vec<u8>>, Vec<u8>), Strin
                                 stream.read_to_end(&mut res).unwrap();
 
                                 let clrf_idx = find_clrf(&res);
+
+                                if clrf_idx.is_none() {
+                                    return Err(format!("Failed to read response (missing clrf)"));
+                                }
+
                                 let content = res.split_off(clrf_idx.unwrap() + 2);
 
                                 Ok((Some(res), content))
