@@ -8,6 +8,7 @@ extern crate lazy_static;
 use std::env;
 use std::str::FromStr;
 use std::sync::Arc;
+use url::Url;
 
 use gtk::prelude::*;
 
@@ -57,6 +58,15 @@ fn main() {
         let gui = gui.clone();
         button.connect_clicked(move |_| {
             go_back(&gui);
+        });
+    }
+
+    // Bind forward button
+    {
+        let button = gui.forward_button();
+        let gui = gui.clone();
+        button.connect_clicked(move |_| {
+            go_forward(&gui);
         });
     }
 
@@ -145,29 +155,38 @@ fn route_url(gui: &Arc<Gui>, url: String) {
 }
 
 fn go_back(gui: &Arc<Gui>) {
-    let previous = history::get_previous_url();
-    if let Some(url) = previous {
-        match url.scheme() {
-            "finger" => visit_url(
-                gui,
-                Finger {
-                    source: url.to_string(),
-                },
-            ),
-            "gemini" => visit_url(
-                gui,
-                Gemini {
-                    source: url.to_string(),
-                },
-            ),
-            "gopher" => visit_url(
-                gui,
-                Gopher {
-                    source: url.to_string(),
-                },
-            ),
-            _ => (),
-        }
+    if let Some(prev) = history::get_previous_url() {
+        visit(gui, &prev);
+    }
+}
+
+fn go_forward(gui: &Arc<Gui>) {
+    if let Some(next) = history::get_next_url() {
+        visit(gui, &next);
+    }
+}
+
+fn visit(gui: &Arc<Gui>, url: &Url) {
+    match url.scheme() {
+        "finger" => visit_url(
+            gui,
+            Finger {
+                source: url.to_string(),
+            },
+        ),
+        "gemini" => visit_url(
+            gui,
+            Gemini {
+                source: url.to_string(),
+            },
+        ),
+        "gopher" => visit_url(
+            gui,
+            Gopher {
+                source: url.to_string(),
+            },
+        ),
+        _ => (),
     }
 }
 
@@ -190,8 +209,7 @@ fn add_bookmark(gui: &Arc<Gui>) {
         if bookmarks::is_valid(&url) {
             bookmarks::add(&url);
             dialog::info(&gui, "Bookmark added.");
-        }
-        else {
+        } else {
             dialog::error(&gui, "Invalid bookmark URL.");
         }
     }
