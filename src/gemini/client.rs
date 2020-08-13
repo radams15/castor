@@ -51,7 +51,7 @@ pub fn get_data<T: Protocol>(url: T) -> Result<(Option<Vec<u8>>, Vec<u8>), Strin
                                 let clrf_idx = find_clrf(&res);
 
                                 if clrf_idx.is_none() {
-                                    return Err(format!("Failed to read response (missing clrf)"));
+                                    return Err("Failed to read response (missing clrf)".to_string());
                                 }
 
                                 let content = res.split_off(clrf_idx.unwrap() + 2);

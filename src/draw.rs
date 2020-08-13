@@ -251,7 +251,7 @@ pub fn gemini_link(gui: &Arc<Gui>, link_item: String) {
     match GeminiLink::from_str(&link_item) {
         Ok(GeminiLink::Finger(url, label)) => {
             let button_label = if label.is_empty() {
-                url.clone().to_string()
+                url.to_string()
             } else {
                 label
             };
@@ -263,7 +263,7 @@ pub fn gemini_link(gui: &Arc<Gui>, link_item: String) {
         }
         Ok(GeminiLink::Gopher(url, label)) => {
             let button_label = if label.is_empty() {
-                url.clone().to_string()
+                url.to_string()
             } else {
                 label
             };
@@ -272,7 +272,7 @@ pub fn gemini_link(gui: &Arc<Gui>, link_item: String) {
         }
         Ok(GeminiLink::Http(url, label)) => {
             let button_label = if label.is_empty() {
-                url.clone().to_string()
+                url.to_string()
             } else {
                 label
             };
@@ -293,7 +293,7 @@ pub fn gopher_link(gui: &Arc<Gui>, link_item: String) {
     match GopherLink::from_str(&link_item) {
         Ok(GopherLink::Http(url, label)) => {
             let button_label = if label.is_empty() {
-                url.clone().to_string()
+                url.to_string()
             } else {
                 label
             };
@@ -303,7 +303,7 @@ pub fn gopher_link(gui: &Arc<Gui>, link_item: String) {
         }
         Ok(GopherLink::Gopher(url, label)) => {
             let button_label = if label.is_empty() {
-                url.clone().to_string()
+                url.to_string()
             } else {
                 label
             };
@@ -312,7 +312,7 @@ pub fn gopher_link(gui: &Arc<Gui>, link_item: String) {
         }
         Ok(GopherLink::Image(url, label)) => {
             let button_label = if label.is_empty() {
-                url.clone().to_string()
+                url.to_string()
             } else {
                 label
             };
@@ -321,7 +321,7 @@ pub fn gopher_link(gui: &Arc<Gui>, link_item: String) {
         }
         Ok(GopherLink::File(url, label)) => {
             let button_label = if label.is_empty() {
-                url.clone().to_string()
+                url.to_string()
             } else {
                 label
             };
@@ -337,7 +337,7 @@ pub fn gopher_link(gui: &Arc<Gui>, link_item: String) {
         }
         Ok(GopherLink::Ftp(url, label)) => {
             let button_label = if label.is_empty() {
-                url.clone().to_string()
+                url.to_string()
             } else {
                 label
             };
@@ -347,7 +347,7 @@ pub fn gopher_link(gui: &Arc<Gui>, link_item: String) {
         }
         Ok(GopherLink::Finger(url, label)) => {
             let button_label = if label.is_empty() {
-                url.clone().to_string()
+                url.to_string()
             } else {
                 label
             };
@@ -365,7 +365,7 @@ pub fn insert_button(gui: &Arc<Gui>, url: Url, label: String) {
     let buffer = content_view.get_buffer().unwrap();
 
     let button_label = if label.is_empty() {
-        url.clone().to_string()
+        url.to_string()
     } else {
         label
     };
@@ -394,7 +394,7 @@ pub fn insert_gopher_file_button(gui: &Arc<Gui>, url: Url, label: String) {
     let buffer = content_view.get_buffer().unwrap();
 
     let button_label = if label.is_empty() {
-        url.clone().to_string()
+        url.to_string()
     } else {
         label
     };
