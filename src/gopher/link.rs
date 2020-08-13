@@ -203,6 +203,10 @@ pub fn make_link(url: String, label: String) -> Option<Link> {
 fn extract_url(line: &str) -> &str {
     let finder = LinkFinder::new();
     let links: Vec<_> = finder.links(line).collect();
-    let link = &links[0];
-    link.as_str()
+    if links.is_empty() {
+        line
+    } else {
+        let link = &links[0];
+        link.as_str()
+    }
 }
