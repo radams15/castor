@@ -48,13 +48,13 @@ pub fn get_data<T: Protocol>(url: T) -> Result<(Option<Vec<u8>>, Vec<u8>), Strin
                                 let mut res = vec![];
                                 stream.read_to_end(&mut res).unwrap();
 
-                                let clrf_idx = find_clrf(&res);
+                                let crlf_idx = find_crlf(&res);
 
-                                if clrf_idx.is_none() {
-                                    return Err("Failed to read response (missing clrf)".to_string());
+                                if crlf_idx.is_none() {
+                                    return Err("Failed to read response (missing crlf)".to_string());
                                 }
 
-                                let content = res.split_off(clrf_idx.unwrap() + 2);
+                                let content = res.split_off(crlf_idx.unwrap() + 2);
 
                                 Ok((Some(res), content))
                             })
@@ -72,7 +72,7 @@ pub fn get_data<T: Protocol>(url: T) -> Result<(Option<Vec<u8>>, Vec<u8>), Strin
     }
 }
 
-fn find_clrf(data: &[u8]) -> Option<usize> {
-    let clrf = b"\r\n";
-    data.windows(clrf.len()).position(|window| window == clrf)
+fn find_crlf(data: &[u8]) -> Option<usize> {
+    let crlf = b"\r\n";
+    data.windows(crlf.len()).position(|window| window == crlf)
 }
