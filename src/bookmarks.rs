@@ -7,10 +7,7 @@ use std::io::{Read, Write};
 use url::Url;
 
 pub fn is_valid(url: &str) -> bool {
-    match Url::parse(&url) {
-        Ok(_) => true,
-        _ => false,
-    }
+    Url::parse(&url).is_ok()
 }
 
 pub fn add(url: &str) {
