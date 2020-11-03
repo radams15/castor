@@ -280,6 +280,36 @@ pub fn gemini_link(gui: &Arc<Gui>, link_item: String) {
 
             insert_external_button(&gui, url, &www_label);
         }
+        Ok(GeminiLink::Email(url, label)) => {
+            let button_label = if label.is_empty() {
+                url.to_string()
+            } else {
+                label
+            };
+            let email_label = format!("{} [MAILTO]", button_label);
+
+            insert_external_button(&gui, url, &email_label);
+        }
+        Ok(GeminiLink::XMPP(url, label)) => {
+            let button_label = if label.is_empty() {
+                url.to_string()
+            } else {
+                label
+            };
+            let xmpp_label = format!("{} [XMPP]", button_label);
+
+            insert_external_button(&gui, url, &xmpp_label);
+        }
+        Ok(GeminiLink::IRC(url, label)) => {
+            let button_label = if label.is_empty() {
+                url.to_string()
+            } else {
+                label
+            };
+            let irc_label = format!("{} [IRC]", button_label);
+
+            insert_external_button(&gui, url, &irc_label);
+        }
         Ok(GeminiLink::Relative(url, label)) => {
             let new_url = Gemini { source: url }.to_absolute_url().unwrap();
             insert_button(&gui, new_url, label);
