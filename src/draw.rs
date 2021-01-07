@@ -35,7 +35,7 @@ pub fn gemini_content(
             Ok(crate::gemini::parser::TextElement::H1(header)) => {
                 let mut end_iter = buffer.get_end_iter();
                 if mono_toggle {
-                    buffer.insert_markup(&mut end_iter, &mono_span(header));
+                    buffer.insert_markup(&mut end_iter, &mono_span(escape_text(&header)));
                 } else {
                   buffer.insert_markup(
                       &mut end_iter,
@@ -46,7 +46,7 @@ pub fn gemini_content(
                           crate::settings::get_gemini_h1_font_family(),
                           crate::settings::get_gemini_h1_font_style(),
                           crate::settings::get_h1_character(),
-                          header
+                          escape_text(&header)
                       ),
                   );
                 }
@@ -54,7 +54,7 @@ pub fn gemini_content(
             Ok(crate::gemini::parser::TextElement::H2(header)) => {
                 let mut end_iter = buffer.get_end_iter();
                 if mono_toggle {
-                    buffer.insert_markup(&mut end_iter, &mono_span(header));
+                    buffer.insert_markup(&mut end_iter, &mono_span(escape_text(&header)));
                } else {
                   buffer.insert_markup(
                       &mut end_iter,
@@ -65,7 +65,7 @@ pub fn gemini_content(
                           crate::settings::get_gemini_h2_font_family(),
                           crate::settings::get_gemini_h2_font_style(),
                           crate::settings::get_h2_character(),
-                          header
+                          escape_text(&header)
                       ),
                   );
                 }
@@ -73,7 +73,7 @@ pub fn gemini_content(
             Ok(crate::gemini::parser::TextElement::H3(header)) => {
                 let mut end_iter = buffer.get_end_iter();
                 if mono_toggle {
-                    buffer.insert_markup(&mut end_iter, &mono_span(header));
+                    buffer.insert_markup(&mut end_iter, &mono_span(escape_text(&header)));
                 } else {
                     buffer.insert_markup(
                         &mut end_iter,
@@ -84,7 +84,7 @@ pub fn gemini_content(
                             crate::settings::get_gemini_h3_font_family(),
                             crate::settings::get_gemini_h3_font_style(),
                             crate::settings::get_h3_character(),
-                            header
+                            escape_text(&header)
                         ),
                     );
                 }
