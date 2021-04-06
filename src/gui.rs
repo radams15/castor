@@ -1,10 +1,10 @@
 use gtk::prelude::*;
-use gtk::{ApplicationWindow, Button, Entry, TextView};
+use gtk::{Window, Button, Entry, TextView};
 
 use gdk::WindowExt;
 
 pub struct Gui {
-    window: ApplicationWindow,
+    window: Window,
     url_bar: Entry,
     content_view: TextView,
     back_button: Button,
@@ -27,7 +27,7 @@ impl Gui {
         let builder = gtk::Builder::new_from_string(glade_src);
 
         // Get handles for the various controls we need to use.
-        let window: ApplicationWindow = builder.get_object("window").expect("Couldn't get window");
+        let window: Window = builder.get_object("window").expect("Couldn't get window");
         let url_bar: Entry = builder.get_object("url_bar").expect("Couldn't get url_bar");
         let content_view: TextView = builder
             .get_object("content_view")
@@ -75,7 +75,7 @@ impl Gui {
         self.window.show_all();
     }
 
-    pub fn window(&self) -> &ApplicationWindow {
+    pub fn window(&self) -> &Window {
         &self.window
     }
 
